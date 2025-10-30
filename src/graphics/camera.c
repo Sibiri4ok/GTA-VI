@@ -4,16 +4,12 @@ Camera *camera_create(float width, float height) {
   Camera *camera = (Camera *)calloc(1, sizeof(Camera));
   if (!camera) { return NULL; }
 
-  camera->size.x = width;
-  camera->size.y = height;
-  camera->position.x = 0.0f;
-  camera->position.y = 0.0f;
-  camera->target.x = 0.0f;
-  camera->target.y = 0.0f;
+  camera->size = (Vector2){width, height};
+  camera->position = (Vector2){0.0f, 0.0f};
+  camera->target = (Vector2){0.0f, 0.0f};
   camera->follow_speed = 8.0f;
   camera->following = true;
-  camera->world_bounds.x = 0.0f;
-  camera->world_bounds.y = 0.0f;
+  camera->world_bounds = (Vector2){0.0f, 0.0f};
 
   return camera;
 }
