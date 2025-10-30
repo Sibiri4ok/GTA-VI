@@ -37,4 +37,13 @@ install-deps:
 	sudo apt-get update
 	sudo apt-get install -y libsdl2-dev libsdl2-image-dev
 
+# --- clang format targets ---
+FMT_SOURCES := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -name '*.c' -o -name '*.h')
+
+fmt:
+	clang-format -i $(FMT_SOURCES)
+
+check-fmt:
+	@clang-format --dry-run --Werror $(FMT_SOURCES)
+
 -include $(DEPS)

@@ -1,0 +1,39 @@
+BasedOnStyle: LLVM
+UseTab: Never
+ColumnLimit: 100
+PointerAlignment: Right
+AllowShortIfStatementsOnASingleLine: true
+
+# --- Настройки выравнивания и списков инициализации ---
+AlignAfterOpenBracket: DontAlign
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# --- Форматирование инициализаторов ---
+Cpp11BracedListStyle: true
+BreakBeforeBraces: Attach
+BraceWrapping:
+  AfterEnum: false
+  AfterStruct: false
+  AfterFunction: false
+  AfterClass: false
+  SplitEmptyFunction: false
+
+# --- Управление переносами строк ---
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+BreakBeforeBinaryOperators: None
+
+# --- Другие опции ---
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: false
+AlignOperands: false
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
