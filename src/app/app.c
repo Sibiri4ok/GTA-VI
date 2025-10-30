@@ -47,7 +47,7 @@ App* app_create(const char* title, int width, int height) {
     );
     app->player_texture_down = IMG_LoadTexture(
         renderer_get_sdl_renderer(app->renderer),
-        "assets/mario_down.png"
+        "assets/mario_back.png"
     );
     app->player_texture_forward = IMG_LoadTexture(
         renderer_get_sdl_renderer(app->renderer),

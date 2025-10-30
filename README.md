@@ -10,7 +10,7 @@ make install-deps
 ## Сборка
 
 ```bash
-make          # сборка по умолчанию (O2)
+make
 ```
 
 ## Запуск
