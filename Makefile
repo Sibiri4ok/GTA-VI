@@ -33,10 +33,6 @@ clean:
 run: $(TARGET)
 	./$(TARGET)
 
-install-deps:
-	sudo apt-get update
-	sudo apt-get install -y libsdl2-dev libsdl2-image-dev
-
 # --- clang format targets ---
 FMT_SOURCES := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -name '*.c' -o -name '*.h')
 
