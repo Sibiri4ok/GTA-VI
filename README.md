@@ -2,9 +2,9 @@
 
 
 ## Требования
-
 ```bash
-make install-deps
+sudo apt-get update
+sudo apt-get install -y libsdl2-dev libsdl2-image-dev
 ```
 
 ## Сборка
@@ -16,5 +16,5 @@ make
 ## Запуск
 
 ```bash
-make clean && make run
+make run
 ```
