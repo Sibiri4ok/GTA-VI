@@ -51,7 +51,7 @@ test: $(TEST_TARGET)
 	@./$(TEST_TARGET)
 
 # --- clang format targets ---
-FMT_SOURCES := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -name '*.c' -o -name '*.h')
+FMT_SOURCES := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -path "$(INCLUDE_DIR)/external" -prune -o -name '*.c' -o -name '*.h' -print)
 
 fmt:
 	clang-format -i $(FMT_SOURCES)
