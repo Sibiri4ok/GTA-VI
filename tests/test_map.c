@@ -1,5 +1,6 @@
 #include "test_framework.h"
 #include "game/map.h"
+#include "core/engine.h"
 
 #define EPSILON 0.001f
 
