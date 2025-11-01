@@ -27,6 +27,10 @@ struct Engine {
   Sprite sprite_back;
   Sprite sprite_forward;
 
+  // Player orientation (to preserve direction when idle)
+  Sprite *last_sprite;
+  bool last_flip_horizontal;
+
   // Camera
   Vector2 camera_position;
 
@@ -94,6 +98,10 @@ Engine *engine_create(int width, int height, const char *title) {
   e->player_position = (Vector2){0.0f, 0.0f};
   e->player_velocity = (Vector2){0.0f, 0.0f};
 
+  // Initialize player orientation (facing right by default)
+  e->last_sprite = &e->sprite_default;
+  e->last_flip_horizontal = false;
+
   // Camera at player
   e->camera_position = e->player_position;
 
@@ -150,6 +158,21 @@ void engine_update(Engine *e) {
   e->player_position.x += e->player_velocity.x * e->delta_time;
   e->player_position.y += e->player_velocity.y * e->delta_time;
 
+  // Save current orientation when moving
+  if (e->player_velocity.y < -0.1f) {
+    e->last_sprite = &e->sprite_forward;
+  } else if (e->player_velocity.y > 0.1f) {
+    e->last_sprite = &e->sprite_back;
+  } else if (fabs(e->player_velocity.x) > 0.1f) {
+    e->last_sprite = &e->sprite_default;
+  }
+
+  if (e->player_velocity.x < -0.1f) {
+    e->last_flip_horizontal = true;
+  } else if (e->player_velocity.x > 0.1f) {
+    e->last_flip_horizontal = false;
+  }
+
   e->camera_position = e->player_position;
 }
 
@@ -165,18 +188,29 @@ void engine_render(Engine *e) {
 
   // Draw player sprite
   Sprite *current_sprite = &e->sprite_default;
-  if (e->player_velocity.y < -0.1f) {
-    current_sprite = &e->sprite_forward;
-  } else if (e->player_velocity.y > 0.1f) {
-    current_sprite = &e->sprite_back;
+  bool flip_horizontal = false;
+
+  // Check if player is moving
+  float vel_mag = sqrtf(
+      e->player_velocity.x * e->player_velocity.x + e->player_velocity.y * e->player_velocity.y);
+
+  if (vel_mag > 0.1f) {
+    // Player is moving - determine sprite based on velocity
+    if (e->player_velocity.y < -0.1f) {
+      current_sprite = &e->sprite_forward;
+    } else if (e->player_velocity.y > 0.1f) {
+      current_sprite = &e->sprite_back;
+    }
+    flip_horizontal = e->player_velocity.x < -0.1f;
+  } else {
+    // Player is idle - use last known orientation
+    current_sprite = e->last_sprite;
+    flip_horizontal = e->last_flip_horizontal;
   }
 
   // Convert player world position to screen position
   int player_screen_x = (int)(e->player_position.x - e->camera_position.x + e->width / 2);
   int player_screen_y = (int)(e->player_position.y - e->camera_position.y + e->height / 2);
-
-  // Determine if sprite should be flipped (when moving left)
-  bool flip_horizontal = e->player_velocity.x < -0.1f;
 
   if (current_sprite->pixels) {
     draw_sprite(e->pixels,
