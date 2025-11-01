@@ -1,6 +1,7 @@
 #include "core/engine.h"
 #include "core/input.h"
 #include "game/map.h"
+#include "graphics/camera.h"
 #include "graphics/display.h"
 #include "graphics/render.h"
 #include <math.h>
@@ -34,7 +35,7 @@ struct Engine {
   bool last_flip_horizontal;
 
   // Camera
-  Vector2 camera_position;
+  Camera *camera;
 
   // Render buffer
   uint32_t *pixels;
@@ -59,11 +60,20 @@ Engine *engine_create(int width, int height, const char *title) {
     return NULL;
   }
 
+  // Create camera
+  e->camera = camera_create(width, height);
+  if (!e->camera) {
+    display_destroy(e->display);
+    free(e);
+    return NULL;
+  }
+
   input_init(&e->input);
 
   // Allocate render buffer
   e->pixels = calloc(width * height, sizeof(uint32_t));
   if (!e->pixels) {
+    camera_destroy(e->camera);
     display_destroy(e->display);
     free(e);
     return NULL;
@@ -73,6 +83,7 @@ Engine *engine_create(int width, int height, const char *title) {
   e->map_buffer = calloc(width * height, sizeof(uint32_t));
   if (!e->map_buffer) {
     free(e->pixels);
+    camera_destroy(e->camera);
     display_destroy(e->display);
     free(e);
     return NULL;
@@ -83,6 +94,7 @@ Engine *engine_create(int width, int height, const char *title) {
   if (!e->map) {
     free(e->map_buffer);
     free(e->pixels);
+    camera_destroy(e->camera);
     display_destroy(e->display);
     free(e);
     return NULL;
@@ -104,8 +116,7 @@ Engine *engine_create(int width, int height, const char *title) {
   e->last_sprite = &e->sprite_default;
   e->last_flip_horizontal = false;
 
-  // Camera at player
-  e->camera_position = e->player_position;
+  camera_set_target(e->camera, e->player_position);
 
   e->last_frame_time = display_get_ticks();
   e->accumulator = 0.0f;
@@ -123,6 +134,7 @@ void engine_destroy(Engine *e) {
   if (e->map) map_destroy(e->map);
   if (e->map_buffer) free(e->map_buffer);
   if (e->pixels) free(e->pixels);
+  if (e->camera) camera_destroy(e->camera);
   if (e->display) display_destroy(e->display);
   free(e);
 }
@@ -192,7 +204,9 @@ void engine_update(Engine *e) {
     e->last_flip_horizontal = false;
   }
 
-  e->camera_position = e->player_position;
+  // Update camera to follow player
+  camera_set_target(e->camera, e->player_position);
+  camera_update(e->camera, FIXED_TIMESTEP);
 }
 
 void engine_render(Engine *e) {
@@ -203,7 +217,8 @@ void engine_render(Engine *e) {
   for (int i = 0; i < e->width * e->height; i++) { e->pixels[i] = bg_color; }
 
   // Render map with camera
-  map_render_software(e->map, e->pixels, e->width, e->height, e->camera_position);
+  Vector2 cam_pos = camera_get_position(e->camera);
+  map_render_software(e->map, e->pixels, e->width, e->height, cam_pos);
 
   // Draw player sprite
   Sprite *current_sprite = &e->sprite_default;
@@ -228,8 +243,9 @@ void engine_render(Engine *e) {
   }
 
   // Convert player world position to screen position
-  int player_screen_x = (int)(e->player_position.x - e->camera_position.x + e->width / 2);
-  int player_screen_y = (int)(e->player_position.y - e->camera_position.y + e->height / 2);
+  Vector2 player_screen = camera_world_to_screen(e->camera, e->player_position);
+  int player_screen_x = (int)player_screen.x;
+  int player_screen_y = (int)player_screen.y;
 
   if (current_sprite->pixels) {
     draw_sprite(e->pixels,
