@@ -175,13 +175,17 @@ void engine_render(Engine *e) {
   int player_screen_x = (int)(e->player_position.x - e->camera_position.x + e->width / 2);
   int player_screen_y = (int)(e->player_position.y - e->camera_position.y + e->height / 2);
 
+  // Determine if sprite should be flipped (when moving left)
+  bool flip_horizontal = e->player_velocity.x < -0.1f;
+
   if (current_sprite->pixels) {
     draw_sprite(e->pixels,
         e->width,
         e->height,
         current_sprite,
         player_screen_x - current_sprite->width / 2,
-        player_screen_y - current_sprite->height / 2);
+        player_screen_y - current_sprite->height / 2,
+        flip_horizontal);
   }
 }
 
