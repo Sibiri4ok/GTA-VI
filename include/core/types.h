@@ -8,7 +8,7 @@ typedef struct {
 } Vector2;
 
 typedef struct {
-  uint8_t r, g, b, a;
+  uint8_t a, r, g, b;
 } Color;
 
 typedef struct {
@@ -20,8 +20,5 @@ typedef struct {
 typedef struct {
   float x, y, w, h;
 } Rect;
-
-#define ISO_TILE_WIDTH 64
-#define ISO_TILE_HEIGHT 32
 
 #endif
