@@ -6,7 +6,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"

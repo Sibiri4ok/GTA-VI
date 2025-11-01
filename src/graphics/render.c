@@ -1,7 +1,6 @@
 #include "graphics/render.h"
 #include "external/stb_image.h"
 #include <stdlib.h>
-#include <string.h>
 
 Sprite load_sprite(const char *path) {
   Sprite sprite = {0};
