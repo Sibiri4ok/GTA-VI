@@ -5,7 +5,6 @@ int main(void) {
   if (!engine) return 1;
 
   while (engine_begin_frame(engine)) {
-    engine_update(engine);
     engine_render(engine);
     engine_end_frame(engine);
   }

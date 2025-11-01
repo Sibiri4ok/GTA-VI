@@ -15,7 +15,6 @@ void engine_render(Engine *e);
 void engine_end_frame(Engine *e);
 
 float engine_get_fps(Engine *e);
-float engine_get_delta_time(Engine *e);
 
 // Isometric utilities
 Vector2 iso_tile_to_world(int x, int y);

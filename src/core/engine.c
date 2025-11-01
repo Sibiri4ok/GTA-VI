@@ -10,6 +10,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
 
+#define FIXED_TIMESTEP (1.0f / 60.0f)
+
 struct Engine {
   Display *display;
   Input input;
@@ -39,9 +41,9 @@ struct Engine {
   int width;
   int height;
 
-  // Timing
+  // Fixed timestep: we accumulate time between updates
   uint32_t last_frame_time;
-  float delta_time;
+  float accumulator;
 };
 
 Engine *engine_create(int width, int height, const char *title) {
@@ -77,7 +79,7 @@ Engine *engine_create(int width, int height, const char *title) {
   }
 
   // Create map
-  e->map = map_create(20, 20, ISO_TILE_WIDTH);
+  e->map = map_create(25, 25, ISO_TILE_WIDTH);
   if (!e->map) {
     free(e->map_buffer);
     free(e->pixels);
@@ -105,8 +107,8 @@ Engine *engine_create(int width, int height, const char *title) {
   // Camera at player
   e->camera_position = e->player_position;
 
-  e->last_frame_time = 0;
-  e->delta_time = 0.016f;
+  e->last_frame_time = display_get_ticks();
+  e->accumulator = 0.0f;
 
   return e;
 }
@@ -128,8 +130,25 @@ void engine_destroy(Engine *e) {
 bool engine_begin_frame(Engine *e) {
   if (!e) return false;
 
-  // Poll events
+  printf("FPS: %.2f\n", engine_get_fps(e));
+
   if (!display_poll_events(&e->input)) { return false; }
+
+  // Fixed timestep: measure frame time
+  uint32_t current_time = display_get_ticks();
+  float frame_time = (current_time - e->last_frame_time) / 1000.0f;
+  e->last_frame_time = current_time;
+
+  // Cap framte time to avoid slowdown game
+  if (frame_time > 0.25f) frame_time = 0.25f;
+
+  e->accumulator += frame_time;
+
+  // Update logic at fixed rate (60 times per second)
+  while (e->accumulator >= FIXED_TIMESTEP) {
+    engine_update(e);
+    e->accumulator -= FIXED_TIMESTEP;
+  }
 
   return true;
 }
@@ -151,12 +170,12 @@ void engine_update(Engine *e) {
     ay /= len;
   }
 
-  float speed = 20.0f;
+  float speed = 4.0f;
   e->player_velocity.x = ax * speed;
   e->player_velocity.y = ay * speed;
 
-  e->player_position.x += e->player_velocity.x * e->delta_time;
-  e->player_position.y += e->player_velocity.y * e->delta_time;
+  e->player_position.x += e->player_velocity.x;
+  e->player_position.y += e->player_velocity.y;
 
   // Save current orientation when moving
   if (e->player_velocity.y < -0.1f) {
@@ -230,10 +249,6 @@ void engine_end_frame(Engine *e) {
 
 float engine_get_fps(Engine *e) {
   return e ? display_get_fps(e->display) : 0.0f;
-}
-
-float engine_get_delta_time(Engine *e) {
-  return e ? e->delta_time : 0.0f;
 }
 
 // Isometric utilities
