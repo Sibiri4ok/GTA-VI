@@ -1,4 +1,5 @@
 #include "graphics/camera.h"
+#include <stdlib.h>
 
 Camera *camera_create(float width, float height) {
   Camera *camera = (Camera *)calloc(1, sizeof(Camera));
@@ -37,12 +38,11 @@ void camera_update(Camera *camera, float delta_time) {
   if (!camera) return;
 
   if (camera->following) {
-    // Плавное следование за целью
+    // Smoothly follow the target
     Vector2 diff;
     diff.x = camera->target.x - camera->position.x;
     diff.y = camera->target.y - camera->position.y;
 
-    // Увеличена скорость интерполяции для более отзывчивого следования
     float lerp = 15.0f * delta_time;
     if (lerp > 1.0f) lerp = 1.0f;
 
@@ -66,7 +66,7 @@ bool camera_is_visible(const Camera *camera, const Rect *rect) {
 
   Rect viewport = camera_get_viewport(camera);
 
-  // Проверка пересечения прямоугольников
+  // Rectangles overlap check
   return !(rect->x + rect->w < viewport.x || rect->x > viewport.x + viewport.w ||
       rect->y + rect->h < viewport.y || rect->y > viewport.y + viewport.h);
 }
