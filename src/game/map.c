@@ -208,6 +208,12 @@ void map_render_software(Map *map,
       int screen_x = (int)(world_pos.x - camera_pos.x + fb_width / 2 - ISO_TILE_WIDTH / 2);
       int screen_y = (int)(world_pos.y - camera_pos.y + fb_height / 2 - ISO_TILE_HEIGHT / 2);
 
+      // Skip tiles outside screen
+      if (screen_x + sprite->width < 0 || screen_x >= fb_width || screen_y + sprite->height < 0 ||
+          screen_y >= fb_height) {
+        continue;
+      }
+
       // Draw tile sprite
       for (int sy = 0; sy < sprite->height; sy++) {
         for (int sx = 0; sx < sprite->width; sx++) {
