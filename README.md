@@ -18,3 +18,8 @@ make
 ```bash
 make run
 ```
+
+## Отформатировать проект
+```bash
+make fmt
+```
