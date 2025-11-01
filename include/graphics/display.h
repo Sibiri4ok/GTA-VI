@@ -14,5 +14,6 @@ bool display_poll_events(Input *input);
 void display_present(Display *d, const uint32_t *pixels);
 
 float display_get_fps(Display *d);
+uint32_t display_get_ticks(void);
 
 #endif
