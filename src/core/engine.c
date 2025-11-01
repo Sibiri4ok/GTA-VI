@@ -4,6 +4,7 @@
 #include "graphics/camera.h"
 #include "graphics/display.h"
 #include "graphics/render.h"
+#include <graphics/load_sprite.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -90,7 +91,7 @@ Engine *engine_create(int width, int height, const char *title) {
   }
 
   // Create map
-  e->map = map_create(25, 25, ISO_TILE_WIDTH);
+  e->map = map_create(25, 25);
   if (!e->map) {
     free(e->map_buffer);
     free(e->pixels);
@@ -103,10 +104,10 @@ Engine *engine_create(int width, int height, const char *title) {
   // Generate procedural tile sprites
   map_create_tile_sprites(e->map);
 
-  // Load player sprites (scaled down 16x)
-  e->sprite_default = load_sprite_scaled("assets/mario.png", 16);
-  e->sprite_back = load_sprite_scaled("assets/mario_back.png", 16);
-  e->sprite_forward = load_sprite_scaled("assets/mario_forward.png", 16);
+  float scale = 1.0f / 16.0f;
+  e->sprite_default = load_sprite("assets/mario.png", scale);
+  e->sprite_back = load_sprite("assets/mario_back.png", scale);
+  e->sprite_forward = load_sprite("assets/mario_forward.png", scale);
 
   // Initialize player at center
   e->player_position = (Vector2){0.0f, 0.0f};
@@ -142,7 +143,7 @@ void engine_destroy(Engine *e) {
 bool engine_begin_frame(Engine *e) {
   if (!e) return false;
 
-  printf("FPS: %.2f\n", engine_get_fps(e));
+  printf("FPS: %d\n", (int)engine_get_fps(e));
 
   if (!display_poll_events(&e->input)) { return false; }
 
@@ -218,7 +219,7 @@ void engine_render(Engine *e) {
 
   // Render map with camera
   Vector2 cam_pos = camera_get_position(e->camera);
-  map_render_software(e->map, e->pixels, e->width, e->height, cam_pos);
+  map_render(e->map, e->pixels, e->width, e->height, cam_pos);
 
   // Draw player sprite
   Sprite *current_sprite = &e->sprite_default;

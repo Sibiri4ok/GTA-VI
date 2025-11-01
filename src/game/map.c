@@ -1,8 +1,11 @@
 #include "game/map.h"
 #include "core/engine.h"
+#include "graphics/alpha_blend.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+static bool map_is_valid_position(const Map *map, int x, int y);
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -18,7 +21,7 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
   const int w = ISO_TILE_WIDTH;
   const int h = ISO_TILE_HEIGHT;
 
-  Sprite sprite = {0};
+  Sprite sprite;
   sprite.width = w;
   sprite.height = h;
   sprite.pixels = (uint32_t *)calloc(w * h, sizeof(uint32_t));
@@ -32,16 +35,16 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
   const float half_w = w * 0.5f;
   const float half_h = h * 0.5f;
 
-  for (int yy = 0; yy < h; yy++) {
-    float t = fabsf(yy - half_h) / half_h;
+  for (int y = 0; y < h; y++) {
+    float t = fabsf(y - half_h) / half_h;
     float extent = (1.0f - t) * half_w;
     int x_min = (int)floorf(half_w - extent);
     int x_max = (int)ceilf(half_w + extent);
 
-    for (int xx = 0; xx < w; xx++) {
-      int idx = yy * w + xx;
+    for (int x = 0; x < w; x++) {
+      int idx = y * w + x;
 
-      if (xx < x_min || xx > x_max) {
+      if (x < x_min || x > x_max) {
         sprite.pixels[idx] = 0x00000000; // Transparent
         continue;
       }
@@ -51,19 +54,19 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
       float b = (float)base.b;
       float a = (float)base.a;
 
-      float n = rand01(xx, yy) * 0.15f - 0.075f;
+      float n = rand01(x, y) * 0.15f - 0.075f; // [-0.075, 0.075]
 
       switch (type) {
       case TILE_GRASS: {
-        float shade = 0.92f + rand01(xx * 3, yy * 5) * 0.16f;
+        float shade = 0.92f + rand01(x * 3, y * 5) * 0.16f; // [0.92, 1.08]
         r = r * shade;
         g = g * (shade + 0.05f);
         b = b * (shade - 0.02f);
-        if ((hash_u32(xx, yy) % 97u) == 0u) g = fminf(g + 25.0f, 255.0f);
+        if ((hash_u32(x, y) % 97u) == 0u) g = fminf(g + 25.0f, 255.0f);
       } break;
       case TILE_WATER: {
-        float gy = (float)yy / (float)h;
-        float wave = 0.04f * sinf((xx + yy * 0.5f) * 0.2f);
+        float gy = (float)y / (float)h;
+        float wave = 0.04f * sinf((x + y * 0.5f) * 0.2f);
         r = 20.0f + 10.0f * gy;
         g = 100.0f + 40.0f * gy;
         b = 180.0f + 50.0f * gy;
@@ -72,34 +75,16 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
         b *= 1.0f + wave;
       } break;
       case TILE_SAND: {
-        float speck = rand01(xx * 7, yy * 11) * 0.25f - 0.125f;
+        float speck = rand01(x * 7, y * 11) * 0.25f - 0.125f;
         r *= 1.0f + speck;
         g *= 1.0f + speck * 0.5f;
         b *= 1.0f - speck * 0.3f;
       } break;
       case TILE_ROCK: {
-        float rough = rand01(xx * 5, yy * 5) * 0.3f - 0.15f;
+        float rough = rand01(x * 5, y * 5) * 0.3f - 0.15f;
         r *= 1.0f + rough;
         g *= 1.0f + rough;
         b *= 1.0f + rough;
-      } break;
-      case TILE_ROAD_NS:
-      case TILE_ROAD_EW:
-      case TILE_ROAD_CROSS: {
-        float rough = rand01(xx * 13, yy * 9) * 0.15f - 0.075f;
-        r = 90.0f * (1.0f + rough);
-        g = 92.0f * (1.0f + rough);
-        b = 96.0f * (1.0f + rough);
-        if (type != TILE_ROAD_EW && ((xx - x_min) % 20) < 2) {
-          r = 230.0f;
-          g = 210.0f;
-          b = 80.0f;
-        }
-        if (type != TILE_ROAD_NS && (yy % 20) < 2) {
-          r = 230.0f;
-          g = 210.0f;
-          b = 80.0f;
-        }
       } break;
       case TILE_SHADOW: {
         r = 0.0f;
@@ -115,17 +100,17 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
       }
 
       // Edge shading
-      float edge = fminf(fabsf(xx - half_w) / fmaxf(extent, 1.0f), t);
+      float edge = fminf(fabsf(x - half_w) / fmaxf(extent, 1.0f), t);
       float shade = 1.0f - 0.15f * fminf(edge * 1.5f, 1.0f);
       r *= shade;
       g *= shade;
       b *= shade;
 
-      // Clamp and convert to 0xAARRGGBB format (SDL_PIXELFORMAT_ARGB8888)
+      // Clamp and convert to ARGB format
+      uint8_t A = (uint8_t)fminf(fmaxf(a, 0.0f), 255.0f);
       uint8_t R = (uint8_t)fminf(fmaxf(r, 0.0f), 255.0f);
       uint8_t G = (uint8_t)fminf(fmaxf(g, 0.0f), 255.0f);
       uint8_t B = (uint8_t)fminf(fmaxf(b, 0.0f), 255.0f);
-      uint8_t A = (uint8_t)fminf(fmaxf(a, 0.0f), 255.0f);
 
       sprite.pixels[idx] = (A << 24) | (R << 16) | (G << 8) | B;
     }
@@ -134,8 +119,7 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
   return sprite;
 }
 
-Map *map_create(int width, int height, int tile_size) {
-  (void)tile_size;
+Map *map_create(int width, int height) {
   Map *map = (Map *)calloc(1, sizeof(Map));
   if (!map) { return NULL; }
 
@@ -143,7 +127,6 @@ Map *map_create(int width, int height, int tile_size) {
   map->height = height;
   map->tile_width = ISO_TILE_WIDTH;
   map->tile_height = ISO_TILE_HEIGHT;
-  map->is_isometric = true;
 
   map->world_size.x = (float)(width * ISO_TILE_WIDTH);
   map->world_size.y = (float)(height * ISO_TILE_HEIGHT);
@@ -174,23 +157,17 @@ void map_destroy(Map *map) {
   free(map);
 }
 
-void map_set_tile(Map *map, int x, int y, TileType type) {
-  if (!map || !map->tiles) return;
-
-  if (map_is_valid_position(map, x, y)) { map->tiles[y * map->width + x] = type; }
-}
-
-TileType map_get_tile(const Map *map, int x, int y) {
+static TileType map_get_tile(const Map *map, int x, int y) {
   if (!map || !map->tiles) return TILE_EMPTY;
 
   if (map_is_valid_position(map, x, y)) { return map->tiles[y * map->width + x]; }
   return TILE_EMPTY;
 }
 
-void map_render_software(Map *map,
+void map_render(Map *map,
     uint32_t *framebuffer,
-    int fb_width,
-    int fb_height,
+    int frame_width,
+    int frame_height,
     Vector2 camera_pos) {
   if (!map || !framebuffer || !map->tiles) return;
 
@@ -205,12 +182,12 @@ void map_render_software(Map *map,
       Vector2 world_pos = iso_tile_to_world(x, y);
 
       // Convert world to screen with camera
-      int screen_x = (int)(world_pos.x - camera_pos.x + fb_width / 2 - ISO_TILE_WIDTH / 2);
-      int screen_y = (int)(world_pos.y - camera_pos.y + fb_height / 2 - ISO_TILE_HEIGHT / 2);
+      int screen_x = (int)(world_pos.x - camera_pos.x + frame_width / 2 - ISO_TILE_WIDTH / 2);
+      int screen_y = (int)(world_pos.y - camera_pos.y + frame_height / 2 - ISO_TILE_HEIGHT / 2);
 
       // Skip tiles outside screen
-      if (screen_x + sprite->width < 0 || screen_x >= fb_width || screen_y + sprite->height < 0 ||
-          screen_y >= fb_height) {
+      if (screen_x + sprite->width < 0 || screen_x >= frame_width ||
+          screen_y + sprite->height < 0 || screen_y >= frame_height) {
         continue;
       }
 
@@ -220,50 +197,23 @@ void map_render_software(Map *map,
           int px = screen_x + sx;
           int py = screen_y + sy;
 
-          if (px < 0 || px >= fb_width || py < 0 || py >= fb_height) continue;
+          if (px < 0 || px >= frame_width || py < 0 || py >= frame_height) continue;
 
           uint32_t src = sprite->pixels[sy * sprite->width + sx];
           uint8_t src_a = (src >> 24) & 0xFF;
           if (src_a == 0) continue;
 
-          int fb_idx = py * fb_width + px;
+          int fb_idx = py * frame_width + px;
+          uint32_t dst = framebuffer[fb_idx];
 
-          if (src_a == 255) {
-            framebuffer[fb_idx] = src;
-          } else {
-            // Alpha blending
-            uint8_t src_r = (src >> 16) & 0xFF;
-            uint8_t src_g = (src >> 8) & 0xFF;
-            uint8_t src_b = src & 0xFF;
-
-            uint32_t dst = framebuffer[fb_idx];
-            uint8_t dst_r = (dst >> 16) & 0xFF;
-            uint8_t dst_g = (dst >> 8) & 0xFF;
-            uint8_t dst_b = dst & 0xFF;
-
-            uint8_t out_r = (src_r * src_a + dst_r * (255 - src_a)) / 255;
-            uint8_t out_g = (src_g * src_a + dst_g * (255 - src_a)) / 255;
-            uint8_t out_b = (src_b * src_a + dst_b * (255 - src_a)) / 255;
-
-            framebuffer[fb_idx] = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
-          }
+          framebuffer[fb_idx] = alpha_blend(src, dst);
         }
       }
     }
   }
 }
 
-Vector2 map_world_to_tile(const Map *map, Vector2 world_pos) {
-  (void)map;
-  return iso_world_to_tile(world_pos);
-}
-
-Vector2 map_tile_to_world(const Map *map, Vector2 tile_pos) {
-  (void)map;
-  return iso_tile_to_world((int)tile_pos.x, (int)tile_pos.y);
-}
-
-bool map_is_valid_position(const Map *map, int x, int y) {
+static bool map_is_valid_position(const Map *map, int x, int y) {
   if (!map) return false;
   return (x >= 0 && x < map->width && y >= 0 && y < map->height);
 }
@@ -272,22 +222,14 @@ void map_create_tile_sprites(Map *map) {
   if (!map) return;
 
   for (int i = 0; i < TILE_MAX; i++) {
-    Color color = (Color){128, 128, 128, 255};
+    Color color = (Color){255, 128, 128, 128};
     switch (i) {
-    case TILE_GROUND: color = (Color){139, 90, 60, 255}; break;
-    case TILE_WALL: color = (Color){110, 110, 120, 255}; break;
-    case TILE_SHADOW: color = (Color){0, 0, 0, 120}; break;
-    case TILE_ROAD_NS:
-    case TILE_ROAD_EW:
-    case TILE_ROAD_CROSS: color = (Color){95, 95, 100, 255}; break;
-    case TILE_WATER: color = (Color){30, 120, 200, 255}; break;
-    case TILE_SAND: color = (Color){235, 210, 160, 255}; break;
-    case TILE_ROCK: color = (Color){140, 140, 150, 255}; break;
-    case TILE_GRASS: color = (Color){90, 155, 85, 255}; break;
-    case TILE_BUILDING_RESIDENTIAL: color = (Color){210, 210, 255, 255}; break;
-    case TILE_BUILDING_COMMERCIAL: color = (Color){200, 245, 210, 255}; break;
-    case TILE_BUILDING_INDUSTRIAL: color = (Color){170, 165, 210, 255}; break;
-    case TILE_BUILDING_PUBLIC: color = (Color){255, 255, 220, 255}; break;
+    case TILE_GROUND: color = (Color){255, 139, 90, 60}; break;
+    case TILE_SHADOW: color = (Color){120, 0, 0, 0}; break;
+    case TILE_WATER: color = (Color){255, 30, 120, 200}; break;
+    case TILE_SAND: color = (Color){255, 235, 210, 160}; break;
+    case TILE_ROCK: color = (Color){255, 140, 140, 150}; break;
+    case TILE_GRASS: color = (Color){255, 90, 155, 85}; break;
     default: break;
     }
 
