@@ -91,11 +91,14 @@ void free_sprite(Sprite *sprite) {
   sprite->height = 0;
 }
 
-void draw_sprite(uint32_t *framebuffer, int fb_width, int fb_height, Sprite *sprite, int x, int y) {
+void draw_sprite(uint32_t *framebuffer, int fb_width, int fb_height, Sprite *sprite, int x, int y, bool flip_horizontal) {
   if (!framebuffer || !sprite || !sprite->pixels) return;
 
   for (int sy = 0; sy < sprite->height; sy++) {
     for (int sx = 0; sx < sprite->width; sx++) {
+      // Calculate source x with optional horizontal flip
+      int src_x = flip_horizontal ? (sprite->width - 1 - sx) : sx;
+      
       int screen_x = x + sx;
       int screen_y = y + sy;
 
@@ -103,7 +106,7 @@ void draw_sprite(uint32_t *framebuffer, int fb_width, int fb_height, Sprite *spr
         continue;
       }
 
-      uint32_t src = sprite->pixels[sy * sprite->width + sx];
+      uint32_t src = sprite->pixels[sy * sprite->width + src_x];
       uint8_t src_a = (src >> 24) & 0xFF;
       if (src_a == 0) continue;
 
