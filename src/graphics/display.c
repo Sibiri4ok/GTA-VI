@@ -83,22 +83,34 @@ void display_destroy(Display *d) {
 }
 
 // Poll events and send them to input entity
-bool display_poll_events(Display *d, Input *input) {
+bool display_poll_events(Input *input) {
   input_clear(input);
 
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
-    case SDL_QUIT:
-      input_push_action(input, INPUT_ACTION_QUIT);
-      return false;
+    case SDL_QUIT: input->quit = true; return false;
 
     case SDL_KEYDOWN:
+      if (event.key.repeat) break; // ignore key repeat evenets
       switch (event.key.keysym.scancode) {
-      case SDL_SCANCODE_W: input_push_action(input, INPUT_ACTION_W); break;
-      case SDL_SCANCODE_A: input_push_action(input, INPUT_ACTION_A); break;
-      case SDL_SCANCODE_S: input_push_action(input, INPUT_ACTION_S); break;
-      case SDL_SCANCODE_D: input_push_action(input, INPUT_ACTION_D); break;
+      case SDL_SCANCODE_W: input->w = true; break;
+      case SDL_SCANCODE_A: input->a = true; break;
+      case SDL_SCANCODE_S: input->s = true; break;
+      case SDL_SCANCODE_D: input->d = true; break;
+      case SDL_SCANCODE_ESCAPE: input->quit = true; break;
+      default: break;
+      }
+      break;
+
+    case SDL_KEYUP:
+      switch (event.key.keysym.scancode) {
+      case SDL_SCANCODE_W: input->w = false; break;
+      case SDL_SCANCODE_A: input->a = false; break;
+      case SDL_SCANCODE_S: input->s = false; break;
+      case SDL_SCANCODE_D: input->d = false; break;
+      case SDL_SCANCODE_ESCAPE: input->quit = false; break;
+      default: break;
       }
       break;
     }
@@ -113,9 +125,7 @@ void display_present(Display *d, const uint32_t *pixels) {
   // Update FPS
   uint32_t current_time = SDL_GetTicks();
   uint32_t elapsed = current_time - d->last_frame_time;
-  if (elapsed > 0) {
-    d->fps = 1000.0f / (float)elapsed;
-  }
+  if (elapsed > 0) { d->fps = 1000.0f / (float)elapsed; }
   d->last_frame_time = current_time;
 
   // pixels (RAM) -> texture (VRAM)

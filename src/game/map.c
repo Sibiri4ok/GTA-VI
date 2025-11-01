@@ -1,8 +1,8 @@
 #include "game/map.h"
-#include "graphics/camera.h"
-#include "graphics/renderer.h"
+#include "core/engine.h"
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -14,15 +14,20 @@ static float rand01(int x, int y) {
   return (hash_u32(x, y) & 0xFFFF) / 65535.0f;
 }
 
-static SDL_Surface *create_isometric_tile_surface(Color base, TileType type) {
+static Sprite create_isometric_tile_sprite(Color base, TileType type) {
   const int w = ISO_TILE_WIDTH;
   const int h = ISO_TILE_HEIGHT;
-  SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
-  if (!surface) return NULL;
 
-  SDL_LockSurface(surface);
-  uint8_t *pixels = (uint8_t *)surface->pixels;
-  const int pitch = surface->pitch;
+  Sprite sprite = {0};
+  sprite.width = w;
+  sprite.height = h;
+  sprite.pixels = (uint32_t *)calloc(w * h, sizeof(uint32_t));
+
+  if (!sprite.pixels) {
+    sprite.width = 0;
+    sprite.height = 0;
+    return sprite;
+  }
 
   const float half_w = w * 0.5f;
   const float half_h = h * 0.5f;
@@ -32,11 +37,12 @@ static SDL_Surface *create_isometric_tile_surface(Color base, TileType type) {
     float extent = (1.0f - t) * half_w;
     int x_min = (int)floorf(half_w - extent);
     int x_max = (int)ceilf(half_w + extent);
-    uint32_t *row = (uint32_t *)(pixels + yy * pitch);
 
     for (int xx = 0; xx < w; xx++) {
+      int idx = yy * w + xx;
+
       if (xx < x_min || xx > x_max) {
-        row[xx] = 0x00000000; // прозрачный фон
+        sprite.pixels[idx] = 0x00000000; // Transparent
         continue;
       }
 
@@ -108,24 +114,24 @@ static SDL_Surface *create_isometric_tile_surface(Color base, TileType type) {
       } break;
       }
 
-      // лёгкое затемнение по краям ромба
+      // Edge shading
       float edge = fminf(fabsf(xx - half_w) / fmaxf(extent, 1.0f), t);
       float shade = 1.0f - 0.15f * fminf(edge * 1.5f, 1.0f);
       r *= shade;
       g *= shade;
       b *= shade;
 
-      // запись пикселя
+      // Clamp and convert to 0xAARRGGBB format (SDL_PIXELFORMAT_ARGB8888)
       uint8_t R = (uint8_t)fminf(fmaxf(r, 0.0f), 255.0f);
       uint8_t G = (uint8_t)fminf(fmaxf(g, 0.0f), 255.0f);
       uint8_t B = (uint8_t)fminf(fmaxf(b, 0.0f), 255.0f);
       uint8_t A = (uint8_t)fminf(fmaxf(a, 0.0f), 255.0f);
-      row[xx] = SDL_MapRGBA(surface->format, R, G, B, A);
+
+      sprite.pixels[idx] = (A << 24) | (R << 16) | (G << 8) | B;
     }
   }
 
-  SDL_UnlockSurface(surface);
-  return surface;
+  return sprite;
 }
 
 Map *map_create(int width, int height, int tile_size) {
@@ -139,7 +145,6 @@ Map *map_create(int width, int height, int tile_size) {
   map->tile_height = ISO_TILE_HEIGHT;
   map->is_isometric = true;
 
-  // Учитываем, что изометрическая карта имеет ромбовидную форму
   map->world_size.x = (float)(width * ISO_TILE_WIDTH);
   map->world_size.y = (float)(height * ISO_TILE_HEIGHT);
 
@@ -158,7 +163,10 @@ void map_destroy(Map *map) {
   if (!map) return;
 
   for (int i = 0; i < TILE_MAX; i++) {
-    if (map->tile_textures[i]) { SDL_DestroyTexture(map->tile_textures[i]); }
+    if (map->tile_sprites[i].pixels) {
+      free(map->tile_sprites[i].pixels);
+      map->tile_sprites[i].pixels = NULL;
+    }
   }
 
   if (map->tiles) { free(map->tiles); }
@@ -179,33 +187,62 @@ TileType map_get_tile(const Map *map, int x, int y) {
   return TILE_EMPTY;
 }
 
-void map_render(Map *map, SDL_Renderer *renderer, const Camera *camera) {
-  if (!map || !renderer || !map->tiles) return;
+void map_render_software(Map *map,
+    uint32_t *framebuffer,
+    int fb_width,
+    int fb_height,
+    Vector2 camera_pos) {
+  if (!map || !framebuffer || !map->tiles) return;
 
   for (int y = 0; y < map->height; y++) {
     for (int x = 0; x < map->width; x++) {
       TileType tile = map_get_tile(map, x, y);
       if (tile == TILE_EMPTY) continue;
 
-      SDL_Texture *texture = map->tile_textures[tile];
-      if (!texture) continue;
+      Sprite *sprite = &map->tile_sprites[tile];
+      if (!sprite->pixels) continue;
 
       Vector2 world_pos = iso_tile_to_world(x, y);
 
-      Vector2 screen_pos = camera_world_to_screen(camera, world_pos);
+      // Convert world to screen with camera
+      int screen_x = (int)(world_pos.x - camera_pos.x + fb_width / 2 - ISO_TILE_WIDTH / 2);
+      int screen_y = (int)(world_pos.y - camera_pos.y + fb_height / 2 - ISO_TILE_HEIGHT / 2);
 
-      if (screen_pos.x < -100 || screen_pos.x > camera->size.x + 100 || screen_pos.y < -100 ||
-          screen_pos.y > camera->size.y + 100) {
-        continue;
+      // Draw tile sprite
+      for (int sy = 0; sy < sprite->height; sy++) {
+        for (int sx = 0; sx < sprite->width; sx++) {
+          int px = screen_x + sx;
+          int py = screen_y + sy;
+
+          if (px < 0 || px >= fb_width || py < 0 || py >= fb_height) continue;
+
+          uint32_t src = sprite->pixels[sy * sprite->width + sx];
+          uint8_t src_a = (src >> 24) & 0xFF;
+          if (src_a == 0) continue;
+
+          int fb_idx = py * fb_width + px;
+
+          if (src_a == 255) {
+            framebuffer[fb_idx] = src;
+          } else {
+            // Alpha blending
+            uint8_t src_r = (src >> 16) & 0xFF;
+            uint8_t src_g = (src >> 8) & 0xFF;
+            uint8_t src_b = src & 0xFF;
+
+            uint32_t dst = framebuffer[fb_idx];
+            uint8_t dst_r = (dst >> 16) & 0xFF;
+            uint8_t dst_g = (dst >> 8) & 0xFF;
+            uint8_t dst_b = dst & 0xFF;
+
+            uint8_t out_r = (src_r * src_a + dst_r * (255 - src_a)) / 255;
+            uint8_t out_g = (src_g * src_a + dst_g * (255 - src_a)) / 255;
+            uint8_t out_b = (src_b * src_a + dst_b * (255 - src_a)) / 255;
+
+            framebuffer[fb_idx] = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
+          }
+        }
       }
-
-      SDL_Rect src_rect = {0, 0, ISO_TILE_WIDTH, ISO_TILE_HEIGHT};
-      SDL_Rect dst_rect = {(int)screen_pos.x - ISO_TILE_WIDTH / 2,
-          (int)screen_pos.y - ISO_TILE_HEIGHT / 2,
-          ISO_TILE_WIDTH,
-          ISO_TILE_HEIGHT};
-
-      SDL_RenderCopy(renderer, texture, &src_rect, &dst_rect);
     }
   }
 }
@@ -225,8 +262,8 @@ bool map_is_valid_position(const Map *map, int x, int y) {
   return (x >= 0 && x < map->width && y >= 0 && y < map->height);
 }
 
-void map_create_tile_textures(Map *map, SDL_Renderer *renderer) {
-  if (!map || !renderer) return;
+void map_create_tile_sprites(Map *map) {
+  if (!map) return;
 
   for (int i = 0; i < TILE_MAX; i++) {
     Color color = (Color){128, 128, 128, 255};
@@ -248,14 +285,6 @@ void map_create_tile_textures(Map *map, SDL_Renderer *renderer) {
     default: break;
     }
 
-    SDL_Surface *surface = create_isometric_tile_surface(color, (TileType)i);
-    if (surface) {
-      SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surface);
-      if (tex) {
-        SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-        map->tile_textures[i] = tex;
-      }
-      SDL_FreeSurface(surface);
-    }
+    map->tile_sprites[i] = create_isometric_tile_sprite(color, (TileType)i);
   }
 }

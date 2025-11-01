@@ -10,12 +10,13 @@ typedef enum {
   INPUT_ACTION_A,
   INPUT_ACTION_S,
   INPUT_ACTION_D,
-  INPUT_ACTION_QUIT
+  INPUT_ACTION_ESC
 } InputAction;
 
 typedef struct {
   InputAction actions[INPUT_MAX_ACTIONS];
   int action_count;
+  bool w, a, s, d;
   bool quit;
 } Input;
 
