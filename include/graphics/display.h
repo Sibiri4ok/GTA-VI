@@ -7,7 +7,7 @@
 
 typedef struct Display Display;
 
-Display *display_create(int width, int height, const char *title);
+Display *display_create(int width, int height, float scale, const char *title);
 void display_destroy(Display *d);
 
 bool display_poll_events(Input *input);

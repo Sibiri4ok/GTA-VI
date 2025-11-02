@@ -64,7 +64,7 @@ Engine *engine_create(int width, int height, const char *title) {
   e->width = width;
   e->height = height;
 
-  e->display = display_create(width, height, title);
+  e->display = display_create(width, height, 1.5f, title);
   if (!e->display) {
     free(e);
     return NULL;

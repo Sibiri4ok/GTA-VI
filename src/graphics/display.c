@@ -15,7 +15,7 @@ struct Display {
   float fps;
 };
 
-Display *display_create(int width, int height, const char *title) {
+Display *display_create(int width, int height, float scale, const char *title) {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
     return NULL;
@@ -35,8 +35,8 @@ Display *display_create(int width, int height, const char *title) {
   d->window = SDL_CreateWindow(title,
       SDL_WINDOWPOS_CENTERED,
       SDL_WINDOWPOS_CENTERED,
-      width,
-      height,
+      width * scale,
+      height * scale,
       SDL_WINDOW_SHOWN);
   if (!d->window) {
     fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
