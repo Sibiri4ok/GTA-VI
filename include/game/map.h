@@ -22,6 +22,9 @@ typedef struct Map {
   TileType *tiles;
   Sprite tile_sprites[TILE_MAX];
   uint32_t *pixels;
+
+  GameObject *objects;
+  int object_count;
 } Map;
 
 Map *map_create(int width, int height);
