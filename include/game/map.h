@@ -16,6 +16,16 @@ typedef enum {
   TILE_MAX
 } TileType;
 
+typedef enum {
+  OBJ_BUSH1 = 0,
+  OBJ_BUSH2,
+  OBJ_BUSH3,
+  OBJ_TREE,
+  OBJ_CACTUS,
+  OBJ_PALM,
+  OBJ_MAX
+} ObjectType;
+
 typedef struct Map {
   int width, height;
   int width_pix, height_pix;
@@ -23,6 +33,7 @@ typedef struct Map {
   Sprite tile_sprites[TILE_MAX];
   uint32_t *pixels;
 
+  Sprite object_sprites[OBJ_MAX];
   GameObject *objects;
   int object_count;
 } Map;

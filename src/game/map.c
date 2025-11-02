@@ -1,8 +1,10 @@
 #include "game/map.h"
 #include "graphics/alpha_blend.h"
 #include "graphics/coordinates.h"
+#include "graphics/load_sprite.h"
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 static uint32_t hash_u32(int x, int y);
@@ -12,6 +14,8 @@ static TileType map_get_tile(const Map *map, int x, int y);
 static void map_render(Map *map);
 static void generate_all_tiles(Map *map);
 static Sprite generate_tile(Color base, TileType type);
+static void load_object_sprites(Map *map);
+static void generate_objects(Map *map, int count);
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -51,6 +55,9 @@ Map *map_create(int width, int height) {
   generate_all_tiles(map);
   map_render(map);
 
+  load_object_sprites(map);
+  generate_objects(map, 100);
+
   return map;
 }
 
@@ -64,6 +71,14 @@ void map_destroy(Map *map) {
     }
   }
 
+  for (int i = 0; i < OBJ_MAX; i++) {
+    if (map->object_sprites[i].pixels) {
+      free(map->object_sprites[i].pixels);
+      map->object_sprites[i].pixels = NULL;
+    }
+  }
+
+  if (map->objects) { free(map->objects); }
   if (map->tiles) { free(map->tiles); }
   if (map->pixels) { free(map->pixels); }
 
@@ -239,4 +254,79 @@ static Sprite generate_tile(Color base, TileType type) {
   }
 
   return sprite;
+}
+
+static void load_object_sprites(Map *map) {
+  if (!map) return;
+
+  map->object_sprites[OBJ_BUSH1] = load_sprite("assets/bush1.png", 1.5f);
+  map->object_sprites[OBJ_BUSH2] = load_sprite("assets/bush2.png", 1.5f);
+  map->object_sprites[OBJ_BUSH3] = load_sprite("assets/bush3.png", 1.5f);
+  map->object_sprites[OBJ_TREE] = load_sprite("assets/tree.png", 2.0f);
+  map->object_sprites[OBJ_CACTUS] = load_sprite("assets/cactus1.png", 1.0f);
+  map->object_sprites[OBJ_PALM] = load_sprite("assets/palm.png", 2.5f);
+}
+
+static void generate_objects(Map *map, int count) {
+  if (!map || count <= 0) return;
+
+  map->objects = calloc(count, sizeof(GameObject));
+  if (!map->objects) return;
+
+  // Offsets to match map rendering
+  int offset_x = map->height * (ISO_TILE_WIDTH / 2);
+  int offset_y = map->height * (ISO_TILE_HEIGHT / 2);
+
+  // Margin in pixels for largest sprite
+  int margin_px = 80;
+
+  int generated = 0;
+  int attempts = 0;
+  int max_attempts = count * 10;
+
+  while (generated < count && attempts < max_attempts) {
+    attempts++;
+
+    // Random object type (determine first to know sprite size)
+    ObjectType type = hash_u32(attempts, 2) % OBJ_MAX;
+    Sprite *sprite = &map->object_sprites[type];
+
+    if (!sprite->pixels) continue;
+
+    // Random world position
+    int range_x = map->width_pix - margin_px * 2;
+    int range_y = map->height_pix - margin_px * 2;
+
+    int world_x = (hash_u32(attempts, 0) % range_x) + margin_px - offset_x;
+    int world_y = (hash_u32(attempts, 1) % range_y) + margin_px - offset_y;
+
+    // Check if sprite corners are within map pixel bounds
+    int map_x = world_x + offset_x;
+    int map_y = world_y + offset_y;
+
+    // Check all 4 corners of the sprite
+    if (map_x < 0 || map_x + sprite->width >= map->width_pix || map_y < 0 ||
+        map_y + sprite->height >= map->height_pix) {
+      continue;
+    }
+
+    // Check that the pixel at this position is not transparent (inside diamond)
+    int center_x = map_x + sprite->width / 2;
+    int center_y = map_y + sprite->height;
+
+    if (center_x >= 0 && center_x < map->width_pix && center_y >= 0 && center_y < map->height_pix) {
+      uint32_t pixel = map->pixels[center_y * map->width_pix + center_x];
+      // Check if pixel is not background (has alpha > 0)
+      if ((pixel >> 24) == 0) {
+        continue; // Outside diamond shape
+      }
+    }
+
+    map->objects[generated].position = (Vector2){(float)world_x, (float)world_y};
+    map->objects[generated].sprite = sprite;
+    map->objects[generated].flip_horizontal = false;
+    generated++;
+  }
+
+  map->object_count = generated;
 }

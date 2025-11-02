@@ -14,6 +14,17 @@
 
 #define FIXED_TIMESTEP (1.0f / 60.0f)
 
+static int compare_objects_by_y(const void *a, const void *b) {
+  GameObject *obj_a = (GameObject *)a;
+  GameObject *obj_b = (GameObject *)b;
+
+  // Sort by bottom edge of sprite for proper isometric depth
+  float ya = obj_a->position.y + (obj_a->sprite ? obj_a->sprite->height : 0);
+  float yb = obj_b->position.y + (obj_b->sprite ? obj_b->sprite->height : 0);
+
+  return (ya > yb) - (ya < yb);
+}
+
 struct Engine {
   Display *display;
   Input input;
@@ -36,6 +47,10 @@ struct Engine {
   uint32_t *pixels;
   int width;
   int height;
+
+  // Object render buffer (for sorting)
+  GameObject *render_objects;
+  int render_objects_capacity;
 
   // Fixed timestep: we accumulate time between updates
   uint32_t last_frame_time;
@@ -105,6 +120,19 @@ Engine *engine_create(int width, int height, const char *title) {
 
   e->camera->target = e->player->position;
 
+  // Allocate render buffer for all objects (map objects + player)
+  e->render_objects_capacity = e->map->object_count + 1;
+  e->render_objects = calloc(e->render_objects_capacity, sizeof(GameObject));
+  if (!e->render_objects) {
+    free(e->player);
+    map_destroy(e->map);
+    free(e->pixels);
+    camera_destroy(e->camera);
+    display_destroy(e->display);
+    free(e);
+    return NULL;
+  }
+
   e->last_frame_time = display_get_ticks();
   e->accumulator = 0.0f;
 
@@ -118,6 +146,8 @@ void engine_destroy(Engine *e) {
   free_sprite(&e->sprite_back);
   free_sprite(&e->sprite_forward);
 
+  if (e->render_objects) free(e->render_objects);
+  if (e->player) free(e->player);
   if (e->map) map_destroy(e->map);
   if (e->pixels) free(e->pixels);
   if (e->camera) camera_destroy(e->camera);
@@ -204,8 +234,19 @@ void engine_render(Engine *e) {
   // Render map
   render_frame_static(e->map, e->pixels, e->camera);
 
-  // Draw player
-  if (e->player->sprite) { render_object(e->pixels, e->camera, e->player); }
+  // Combine all objects for rendering (map objects + player)
+  int obj_count = 0;
+
+  // Copy map objects
+  for (int i = 0; i < e->map->object_count; i++) {
+    e->render_objects[obj_count++] = e->map->objects[i];
+  }
+  e->render_objects[obj_count++] = *e->player;
+
+  // Sort by Y coordinate
+  qsort(e->render_objects, obj_count, sizeof(GameObject), compare_objects_by_y);
+
+  render_objects(e->pixels, e->camera, e->render_objects, obj_count);
 }
 
 void engine_end_frame(Engine *e) {
