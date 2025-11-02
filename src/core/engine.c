@@ -59,7 +59,6 @@ Engine *engine_create(int width, int height, const char *title) {
     return NULL;
   }
 
-  // Create camera
   e->camera = camera_create(width, height);
   if (!e->camera) {
     display_destroy(e->display);
@@ -152,28 +151,28 @@ bool engine_begin_frame(Engine *e) {
 void engine_update(Engine *e) {
   if (!e) return;
 
-  // keys are held-down
+  // Process input
   float ax = 0.0f, ay = 0.0f;
   if (e->input.a) ax -= 1.0f;
   if (e->input.d) ax += 1.0f;
   if (e->input.w) ay -= 1.0f;
   if (e->input.s) ay += 1.0f;
 
-  // Normalization (to diagonal movespeed was not faster)
+  // Normalize diagonal movement
   float len = sqrtf(ax * ax + ay * ay);
   if (len > 0.0f) {
     ax /= len;
     ay /= len;
   }
 
+  // Update velocity and position
   float speed = 4.0f;
   e->player_velocity.x = ax * speed;
   e->player_velocity.y = ay * speed;
-
   e->player_position.x += e->player_velocity.x;
   e->player_position.y += e->player_velocity.y;
 
-  // Save current orientation when moving
+  // Update sprite orientation (vertical takes priority over horizontal)
   if (e->player_velocity.y < -0.1f) {
     e->last_sprite = &e->sprite_forward;
   } else if (e->player_velocity.y > 0.1f) {
@@ -188,7 +187,6 @@ void engine_update(Engine *e) {
     e->last_flip_horizontal = false;
   }
 
-  // Update camera to follow player
   camera_set_target(e->camera, e->player_position);
   camera_update(e->camera, FIXED_TIMESTEP);
 }
@@ -200,45 +198,21 @@ void engine_render(Engine *e) {
   uint32_t bg_color = 0xFF963CFF;
   for (int i = 0; i < e->width * e->height; i++) { e->pixels[i] = bg_color; }
 
-  // Render map with camera
+  // Render map
   Vector2 cam_pos = camera_get_position(e->camera);
   render_frame_static(e->map, e->pixels, e->width, e->height, cam_pos);
 
-  // Draw player sprite
-  Sprite *current_sprite = &e->sprite_default;
-  bool flip_horizontal = false;
-
-  // Check if player is moving
-  float vel_mag = sqrtf(
-      e->player_velocity.x * e->player_velocity.x + e->player_velocity.y * e->player_velocity.y);
-
-  if (vel_mag > 0.1f) {
-    // Player is moving - determine sprite based on velocity
-    if (e->player_velocity.y < -0.1f) {
-      current_sprite = &e->sprite_forward;
-    } else if (e->player_velocity.y > 0.1f) {
-      current_sprite = &e->sprite_back;
-    }
-    flip_horizontal = e->player_velocity.x < -0.1f;
-  } else {
-    // Player is idle - use last known orientation
-    current_sprite = e->last_sprite;
-    flip_horizontal = e->last_flip_horizontal;
-  }
-
-  // Convert player world position to screen position
+  // Draw player (sprite orientation determined in engine_update)
   Vector2 player_screen = camera_world_to_screen(e->camera, e->player_position);
-  int player_screen_x = (int)player_screen.x;
-  int player_screen_y = (int)player_screen.y;
 
-  if (current_sprite->pixels) {
+  if (e->last_sprite->pixels) {
     draw_sprite(e->pixels,
         e->width,
         e->height,
-        current_sprite,
-        player_screen_x - current_sprite->width / 2,
-        player_screen_y - current_sprite->height / 2,
-        flip_horizontal);
+        e->last_sprite,
+        (int)player_screen.x - e->last_sprite->width / 2,
+        (int)player_screen.y - e->last_sprite->height / 2,
+        e->last_flip_horizontal);
   }
 }
 
