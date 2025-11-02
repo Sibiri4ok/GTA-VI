@@ -3,11 +3,22 @@
 #include <graphics/alpha_blend.h>
 #include <graphics/camera.h>
 #include <graphics/coordinates.h>
+#include <math.h>
 #include <stdlib.h>
+#include <string.h>
+
+// Renders multiple game objects
+// Objects must be sorted by depth! (y-coordinate)
+void render_objects(uint32_t *framebuffer, Camera *camera, GameObject *objects, int count) {
+  if (!framebuffer || !camera || !objects || count <= 0) return;
+
+  for (int i = 0; i < count; i++) { render_object(framebuffer, camera, &objects[i]); }
+}
 
 void render_object(uint32_t *framebuffer, Camera *camera, GameObject *object) {
   if (!framebuffer || !object) return;
   Sprite *sprite = object->sprite;
+  if (!sprite || !sprite->pixels) return;
 
   for (int sy = 0; sy < sprite->height; sy++) {
     for (int sx = 0; sx < sprite->width; sx++) {
