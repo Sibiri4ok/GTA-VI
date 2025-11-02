@@ -18,21 +18,6 @@ Camera *camera_create(float width, float height) {
 void camera_destroy(Camera *camera) {
   if (camera) { free(camera); }
 }
-void camera_set_target(Camera *camera, Vector2 target) {
-  if (camera) { camera->target = target; }
-}
-
-void camera_set_world_bounds(Camera *camera, Vector2 bounds) {
-  if (camera) { camera->world_bounds = bounds; }
-}
-
-void camera_set_follow_speed(Camera *camera, float speed) {
-  if (camera) { camera->follow_speed = speed; }
-}
-
-void camera_set_following(Camera *camera, bool following) {
-  if (camera) { camera->following = following; }
-}
 
 void camera_update(Camera *camera, float delta_time) {
   if (!camera) return;
@@ -51,37 +36,10 @@ void camera_update(Camera *camera, float delta_time) {
   }
 }
 
-Vector2 camera_get_position(const Camera *camera) {
-  if (camera) { return camera->position; }
-  return (Vector2){0.0f, 0.0f};
-}
+bool camera_is_visible(const Camera *camera, Vector2 pos) {
+  if (!camera) return false;
 
-Vector2 camera_get_size(const Camera *camera) {
-  if (camera) { return camera->size; }
-  return (Vector2){0.0f, 0.0f};
-}
-
-bool camera_is_visible(const Camera *camera, const Rect *rect) {
-  if (!camera || !rect) return false;
-
-  Rect viewport = camera_get_viewport(camera);
-
-  // Rectangles overlap check
-  return !(rect->x + rect->w < viewport.x || rect->x > viewport.x + viewport.w ||
-      rect->y + rect->h < viewport.y || rect->y > viewport.y + viewport.h);
-}
-
-Rect camera_get_viewport(const Camera *camera) {
-  Rect viewport = {0, 0, 0, 0};
-
-  if (camera) {
-    viewport.x = camera->position.x - camera->size.x / 2.0f;
-    viewport.y = camera->position.y - camera->size.y / 2.0f;
-    viewport.w = camera->size.x;
-    viewport.h = camera->size.y;
-  }
-
-  return viewport;
+  return !(pos.x < 0 || pos.x >= camera->size.x || pos.y < 0 || pos.y >= camera->size.y);
 }
 
 Vector2 camera_world_to_screen(const Camera *camera, Vector2 world_pos) {

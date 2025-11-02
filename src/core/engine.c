@@ -22,17 +22,13 @@ struct Engine {
   Map *map;
 
   // Player
-  Vector2 player_position;
-  Vector2 player_velocity;
+  GameObject *player;
+  Vector2 pl_velocity;
 
   // Player sprites
   Sprite sprite_default;
   Sprite sprite_back;
   Sprite sprite_forward;
-
-  // Player orientation (to preserve direction when idle)
-  Sprite *last_sprite;
-  bool last_flip_horizontal;
 
   Camera *camera;
 
@@ -93,14 +89,21 @@ Engine *engine_create(int width, int height, const char *title) {
   e->sprite_forward = load_sprite("assets/mario_forward.png", scale);
 
   // Initialize player at center
-  e->player_position = (Vector2){0.0f, 0.0f};
-  e->player_velocity = (Vector2){0.0f, 0.0f};
+  e->player = calloc(1, sizeof(GameObject));
+  if (!e->player) {
+    free(e->pixels);
+    camera_destroy(e->camera);
+    display_destroy(e->display);
+    free(e);
+    return NULL;
+  }
+  e->player->sprite = &e->sprite_default;
+  e->player->flip_horizontal = false;
 
-  // Initialize player orientation (facing right by default)
-  e->last_sprite = &e->sprite_default;
-  e->last_flip_horizontal = false;
+  e->player->position = (Vector2){0.0f, 0.0f};
+  e->pl_velocity = (Vector2){0.0f, 0.0f};
 
-  camera_set_target(e->camera, e->player_position);
+  e->camera->target = e->player->position;
 
   e->last_frame_time = display_get_ticks();
   e->accumulator = 0.0f;
@@ -167,27 +170,27 @@ void engine_update(Engine *e) {
 
   // Update velocity and position
   float speed = 4.0f;
-  e->player_velocity.x = ax * speed;
-  e->player_velocity.y = ay * speed;
-  e->player_position.x += e->player_velocity.x;
-  e->player_position.y += e->player_velocity.y;
+  e->pl_velocity.x = ax * speed;
+  e->pl_velocity.y = ay * speed;
+  e->player->position.x += e->pl_velocity.x;
+  e->player->position.y += e->pl_velocity.y;
 
   // Update sprite orientation (vertical takes priority over horizontal)
-  if (e->player_velocity.y < -0.1f) {
-    e->last_sprite = &e->sprite_forward;
-  } else if (e->player_velocity.y > 0.1f) {
-    e->last_sprite = &e->sprite_back;
-  } else if (fabs(e->player_velocity.x) > 0.1f) {
-    e->last_sprite = &e->sprite_default;
+  if (e->pl_velocity.y < -0.1f) {
+    e->player->sprite = &e->sprite_forward;
+  } else if (e->pl_velocity.y > 0.1f) {
+    e->player->sprite = &e->sprite_back;
+  } else if (fabs(e->pl_velocity.x) > 0.1f) {
+    e->player->sprite = &e->sprite_default;
   }
 
-  if (e->player_velocity.x < -0.1f) {
-    e->last_flip_horizontal = true;
-  } else if (e->player_velocity.x > 0.1f) {
-    e->last_flip_horizontal = false;
+  if (e->pl_velocity.x < -0.1f) {
+    e->player->flip_horizontal = true;
+  } else if (e->pl_velocity.x > 0.1f) {
+    e->player->flip_horizontal = false;
   }
 
-  camera_set_target(e->camera, e->player_position);
+  e->camera->target = e->player->position;
   camera_update(e->camera, FIXED_TIMESTEP);
 }
 
@@ -199,21 +202,10 @@ void engine_render(Engine *e) {
   for (int i = 0; i < e->width * e->height; i++) { e->pixels[i] = bg_color; }
 
   // Render map
-  Vector2 cam_pos = camera_get_position(e->camera);
-  render_frame_static(e->map, e->pixels, e->width, e->height, cam_pos);
+  render_frame_static(e->map, e->pixels, e->camera);
 
-  // Draw player (sprite orientation determined in engine_update)
-  Vector2 player_screen = camera_world_to_screen(e->camera, e->player_position);
-
-  if (e->last_sprite->pixels) {
-    draw_sprite(e->pixels,
-        e->width,
-        e->height,
-        e->last_sprite,
-        (int)player_screen.x - e->last_sprite->width / 2,
-        (int)player_screen.y - e->last_sprite->height / 2,
-        e->last_flip_horizontal);
-  }
+  // Draw player
+  if (e->player->sprite) { render_object(e->pixels, e->camera, e->player); }
 }
 
 void engine_end_frame(Engine *e) {

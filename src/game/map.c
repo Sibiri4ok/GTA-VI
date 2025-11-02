@@ -10,8 +10,8 @@ static float rand01(int x, int y);
 static bool map_is_valid_position(const Map *map, int x, int y);
 static TileType map_get_tile(const Map *map, int x, int y);
 static void map_render(Map *map);
-static void generate_all_sprites(Map *map);
-static Sprite generate_sprite(Color base, TileType type);
+static void generate_all_tiles(Map *map);
+static Sprite generate_tile(Color base, TileType type);
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -48,7 +48,7 @@ Map *map_create(int width, int height) {
 
   for (int i = 0; i < width * height; i++) { map->tiles[i] = TILE_GRASS; }
 
-  generate_all_sprites(map);
+  generate_all_tiles(map);
   map_render(map);
 
   return map;
@@ -120,7 +120,7 @@ static void map_render(Map *map) {
   }
 }
 
-static void generate_all_sprites(Map *map) {
+static void generate_all_tiles(Map *map) {
   if (!map) return;
 
   for (int i = 0; i < TILE_MAX; i++) {
@@ -135,11 +135,11 @@ static void generate_all_sprites(Map *map) {
     default: break;
     }
 
-    map->tile_sprites[i] = generate_sprite(color, (TileType)i);
+    map->tile_sprites[i] = generate_tile(color, (TileType)i);
   }
 }
 
-static Sprite generate_sprite(Color base, TileType type) {
+static Sprite generate_tile(Color base, TileType type) {
   const int w = ISO_TILE_WIDTH;
   const int h = ISO_TILE_HEIGHT;
 

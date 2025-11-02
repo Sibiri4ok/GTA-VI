@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
@@ -18,7 +19,9 @@ typedef struct {
 } Sprite;
 
 typedef struct {
-  float x, y, w, h;
-} Rect;
+  Vector2 position; // World coordinates
+  Sprite *sprite;
+  bool flip_horizontal;
+} GameObject;
 
 #endif
