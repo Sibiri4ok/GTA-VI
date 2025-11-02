@@ -1,11 +1,17 @@
 #include "game/map.h"
-#include "core/engine.h"
 #include "graphics/alpha_blend.h"
+#include "graphics/coordinates.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+static uint32_t hash_u32(int x, int y);
+static float rand01(int x, int y);
 static bool map_is_valid_position(const Map *map, int x, int y);
+static TileType map_get_tile(const Map *map, int x, int y);
+static void map_render(Map *map);
+static void generate_all_sprites(Map *map);
+static Sprite generate_sprite(Color base, TileType type);
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -17,7 +23,123 @@ static float rand01(int x, int y) {
   return (hash_u32(x, y) & 0xFFFF) / 65535.0f;
 }
 
-static Sprite create_isometric_tile_sprite(Color base, TileType type) {
+Map *map_create(int width, int height) {
+  Map *map = (Map *)calloc(1, sizeof(Map));
+  if (!map) { return NULL; }
+
+  map->width = width;
+  map->height = height;
+
+  map->width_pix = (width + height) * (ISO_TILE_WIDTH / 2);
+  map->height_pix = (width + height) * (ISO_TILE_HEIGHT / 2);
+
+  map->pixels = (uint32_t *)calloc(map->width_pix * map->height_pix, sizeof(uint32_t));
+  if (!map->pixels) {
+    free(map);
+    return NULL;
+  }
+
+  map->tiles = (TileType *)calloc(width * height, sizeof(TileType));
+  if (!map->tiles) {
+    free(map->pixels);
+    free(map);
+    return NULL;
+  }
+
+  for (int i = 0; i < width * height; i++) { map->tiles[i] = TILE_GRASS; }
+
+  generate_all_sprites(map);
+  map_render(map);
+
+  return map;
+}
+
+void map_destroy(Map *map) {
+  if (!map) return;
+
+  for (int i = 0; i < TILE_MAX; i++) {
+    if (map->tile_sprites[i].pixels) {
+      free(map->tile_sprites[i].pixels);
+      map->tile_sprites[i].pixels = NULL;
+    }
+  }
+
+  if (map->tiles) { free(map->tiles); }
+  if (map->pixels) { free(map->pixels); }
+
+  free(map);
+}
+
+static bool map_is_valid_position(const Map *map, int x, int y) {
+  if (!map) return false;
+  return (x >= 0 && x < map->width && y >= 0 && y < map->height);
+}
+
+static TileType map_get_tile(const Map *map, int x, int y) {
+  if (!map || !map->tiles) return TILE_EMPTY;
+
+  if (map_is_valid_position(map, x, y)) { return map->tiles[y * map->width + x]; }
+  return TILE_EMPTY;
+}
+
+static void map_render(Map *map) {
+  if (!map || !map->tiles) return;
+
+  // Tile coordinates
+  for (int yy = 0; yy < map->height; yy++) {
+    for (int xx = 0; xx < map->width; xx++) {
+      TileType tile = map_get_tile(map, xx, yy);
+      if (tile == TILE_EMPTY) continue;
+
+      Sprite *sprite = &map->tile_sprites[tile];
+      if (!sprite->pixels) continue;
+
+      Vector2 world_pos = iso_tile_to_world(xx, yy);
+
+      // Convert world coordinates so that x is not negative
+      int offset_x = map->height * (ISO_TILE_WIDTH / 2);
+      int map_x = (int)(world_pos.x + offset_x - (ISO_TILE_WIDTH / 2));
+      int map_y = (int)world_pos.y;
+
+      // Draw tiles
+      for (int sy = 0; sy < sprite->height; sy++) {
+        for (int sx = 0; sx < sprite->width; sx++) {
+          int px = map_x + sx;
+          int py = map_y + sy;
+
+          // Bounds check
+          if (px < 0 || px >= map->width_pix || py < 0 || py >= map->height_pix) { continue; }
+
+          uint32_t src = sprite->pixels[sy * sprite->width + sx];
+          int idx = py * map->width_pix + px;
+          uint32_t dst = map->pixels[idx];
+          map->pixels[idx] = alpha_blend(src, dst);
+        }
+      }
+    }
+  }
+}
+
+static void generate_all_sprites(Map *map) {
+  if (!map) return;
+
+  for (int i = 0; i < TILE_MAX; i++) {
+    Color color = (Color){255, 128, 128, 128};
+    switch (i) {
+    case TILE_GROUND: color = (Color){255, 139, 90, 60}; break;
+    case TILE_SHADOW: color = (Color){120, 0, 0, 0}; break;
+    case TILE_WATER: color = (Color){255, 30, 120, 200}; break;
+    case TILE_SAND: color = (Color){255, 235, 210, 160}; break;
+    case TILE_ROCK: color = (Color){255, 140, 140, 150}; break;
+    case TILE_GRASS: color = (Color){255, 90, 155, 85}; break;
+    default: break;
+    }
+
+    map->tile_sprites[i] = generate_sprite(color, (TileType)i);
+  }
+}
+
+static Sprite generate_sprite(Color base, TileType type) {
   const int w = ISO_TILE_WIDTH;
   const int h = ISO_TILE_HEIGHT;
 
@@ -117,122 +239,4 @@ static Sprite create_isometric_tile_sprite(Color base, TileType type) {
   }
 
   return sprite;
-}
-
-Map *map_create(int width, int height) {
-  Map *map = (Map *)calloc(1, sizeof(Map));
-  if (!map) { return NULL; }
-
-  map->width = width;
-  map->height = height;
-  map->tile_width = ISO_TILE_WIDTH;
-  map->tile_height = ISO_TILE_HEIGHT;
-
-  map->world_size.x = (float)(width * ISO_TILE_WIDTH);
-  map->world_size.y = (float)(height * ISO_TILE_HEIGHT);
-
-  map->tiles = (TileType *)calloc(width * height, sizeof(TileType));
-  if (!map->tiles) {
-    free(map);
-    return NULL;
-  }
-
-  for (int i = 0; i < width * height; i++) { map->tiles[i] = TILE_GRASS; }
-
-  return map;
-}
-
-void map_destroy(Map *map) {
-  if (!map) return;
-
-  for (int i = 0; i < TILE_MAX; i++) {
-    if (map->tile_sprites[i].pixels) {
-      free(map->tile_sprites[i].pixels);
-      map->tile_sprites[i].pixels = NULL;
-    }
-  }
-
-  if (map->tiles) { free(map->tiles); }
-
-  free(map);
-}
-
-static TileType map_get_tile(const Map *map, int x, int y) {
-  if (!map || !map->tiles) return TILE_EMPTY;
-
-  if (map_is_valid_position(map, x, y)) { return map->tiles[y * map->width + x]; }
-  return TILE_EMPTY;
-}
-
-void map_render(Map *map,
-    uint32_t *framebuffer,
-    int frame_width,
-    int frame_height,
-    Vector2 camera_pos) {
-  if (!map || !framebuffer || !map->tiles) return;
-
-  for (int y = 0; y < map->height; y++) {
-    for (int x = 0; x < map->width; x++) {
-      TileType tile = map_get_tile(map, x, y);
-      if (tile == TILE_EMPTY) continue;
-
-      Sprite *sprite = &map->tile_sprites[tile];
-      if (!sprite->pixels) continue;
-
-      Vector2 world_pos = iso_tile_to_world(x, y);
-
-      // Convert world to screen with camera
-      int screen_x = (int)(world_pos.x - camera_pos.x + frame_width / 2 - ISO_TILE_WIDTH / 2);
-      int screen_y = (int)(world_pos.y - camera_pos.y + frame_height / 2 - ISO_TILE_HEIGHT / 2);
-
-      // Skip tiles outside screen
-      if (screen_x + sprite->width < 0 || screen_x >= frame_width ||
-          screen_y + sprite->height < 0 || screen_y >= frame_height) {
-        continue;
-      }
-
-      // Draw tile sprite
-      for (int sy = 0; sy < sprite->height; sy++) {
-        for (int sx = 0; sx < sprite->width; sx++) {
-          int px = screen_x + sx;
-          int py = screen_y + sy;
-
-          if (px < 0 || px >= frame_width || py < 0 || py >= frame_height) continue;
-
-          uint32_t src = sprite->pixels[sy * sprite->width + sx];
-          uint8_t src_a = (src >> 24) & 0xFF;
-          if (src_a == 0) continue;
-
-          int fb_idx = py * frame_width + px;
-          uint32_t dst = framebuffer[fb_idx];
-
-          framebuffer[fb_idx] = alpha_blend(src, dst);
-        }
-      }
-    }
-  }
-}
-
-static bool map_is_valid_position(const Map *map, int x, int y) {
-  if (!map) return false;
-  return (x >= 0 && x < map->width && y >= 0 && y < map->height);
-}
-
-void map_create_tile_sprites(Map *map) {
-  if (!map) return;
-
-  for (int i = 0; i < TILE_MAX; i++) {
-    Color color = (Color){255, 128, 128, 128};
-    switch (i) {
-    case TILE_GROUND: color = (Color){255, 139, 90, 60}; break;
-    case TILE_SHADOW: color = (Color){120, 0, 0, 0}; break;
-    case TILE_WATER: color = (Color){255, 30, 120, 200}; break;
-    case TILE_SAND: color = (Color){255, 235, 210, 160}; break;
-    case TILE_ROCK: color = (Color){255, 140, 140, 150}; break;
-    case TILE_GRASS: color = (Color){255, 90, 155, 85}; break;
-    default: break;
-    }
-
-    map->tile_sprites[i] = create_isometric_tile_sprite(color, (TileType)i);
-  }
 }

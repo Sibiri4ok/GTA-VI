@@ -18,19 +18,14 @@ typedef enum {
 
 typedef struct Map {
   int width, height;
-  int tile_width;
-  int tile_height;
+  int width_pix, height_pix;
   TileType *tiles;
   Sprite tile_sprites[TILE_MAX];
-  Vector2 world_size;
+  uint32_t *pixels;
 } Map;
 
 Map *map_create(int width, int height);
 void map_destroy(Map *map);
-
-void map_render(Map *map, uint32_t *framebuffer, int fb_width, int fb_height, Vector2 camera_pos);
-
-void map_create_tile_sprites(Map *map);
 
 #define ISO_TILE_WIDTH 64
 #define ISO_TILE_HEIGHT 32

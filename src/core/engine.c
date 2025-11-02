@@ -20,7 +20,6 @@ struct Engine {
 
   // Map
   Map *map;
-  uint32_t *map_buffer;
 
   // Player
   Vector2 player_position;
@@ -35,7 +34,6 @@ struct Engine {
   Sprite *last_sprite;
   bool last_flip_horizontal;
 
-  // Camera
   Camera *camera;
 
   // Render buffer
@@ -80,29 +78,15 @@ Engine *engine_create(int width, int height, const char *title) {
     return NULL;
   }
 
-  // Allocate map buffer for pre-rendered static map
-  e->map_buffer = calloc(width * height, sizeof(uint32_t));
-  if (!e->map_buffer) {
-    free(e->pixels);
-    camera_destroy(e->camera);
-    display_destroy(e->display);
-    free(e);
-    return NULL;
-  }
-
-  // Create map
+  // Create map (tile sprites are generated inside map_create)
   e->map = map_create(25, 25);
   if (!e->map) {
-    free(e->map_buffer);
     free(e->pixels);
     camera_destroy(e->camera);
     display_destroy(e->display);
     free(e);
     return NULL;
   }
-
-  // Generate procedural tile sprites
-  map_create_tile_sprites(e->map);
 
   float scale = 1.0f / 16.0f;
   e->sprite_default = load_sprite("assets/mario.png", scale);
@@ -133,7 +117,6 @@ void engine_destroy(Engine *e) {
   free_sprite(&e->sprite_forward);
 
   if (e->map) map_destroy(e->map);
-  if (e->map_buffer) free(e->map_buffer);
   if (e->pixels) free(e->pixels);
   if (e->camera) camera_destroy(e->camera);
   if (e->display) display_destroy(e->display);
@@ -219,7 +202,7 @@ void engine_render(Engine *e) {
 
   // Render map with camera
   Vector2 cam_pos = camera_get_position(e->camera);
-  map_render(e->map, e->pixels, e->width, e->height, cam_pos);
+  render_frame_static(e->map, e->pixels, e->width, e->height, cam_pos);
 
   // Draw player sprite
   Sprite *current_sprite = &e->sprite_default;
@@ -266,26 +249,4 @@ void engine_end_frame(Engine *e) {
 
 float engine_get_fps(Engine *e) {
   return e ? display_get_fps(e->display) : 0.0f;
-}
-
-// Isometric utilities
-Vector2 iso_tile_to_world(int x, int y) {
-  Vector2 world;
-  world.x = (x - y) * (ISO_TILE_WIDTH / 2.0f);
-  world.y = (x + y) * (ISO_TILE_HEIGHT / 2.0f);
-  return world;
-}
-
-Vector2 iso_world_to_tile(Vector2 world_pos) {
-  Vector2 tile;
-  float inv_tile_w = 2.0f / ISO_TILE_WIDTH;
-  float inv_tile_h = 2.0f / ISO_TILE_HEIGHT;
-
-  tile.x = (world_pos.x * inv_tile_w + world_pos.y * inv_tile_h) / 2.0f;
-  tile.y = (world_pos.y * inv_tile_h - world_pos.x * inv_tile_w) / 2.0f;
-  return tile;
-}
-
-float iso_get_depth(Vector2 world_pos) {
-  return world_pos.x + world_pos.y;
 }
