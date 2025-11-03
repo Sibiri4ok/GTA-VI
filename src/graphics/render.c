@@ -35,6 +35,17 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   int center_x = obj_screen.x + object->cur_sprite->width / 2 + shadow_offset_x;
   int center_y = obj_screen.y + object->cur_sprite->height + shadow_offset_y;
 
+  // Return if shadow is completely off-screen
+  int shadow_left = center_x - shadow_width;
+  int shadow_right = center_x + shadow_width;
+  int shadow_top = center_y - shadow_height;
+  int shadow_bottom = center_y + shadow_height;
+
+  if (shadow_right < 0 || shadow_left >= camera->size.x || shadow_bottom < 0 ||
+      shadow_top >= camera->size.y) {
+    return;
+  }
+
   for (int y = -shadow_height; y <= shadow_height; y++) {
     for (int x = -shadow_width; x <= shadow_width; x++) {
       // Ellipse equation: (x/a)^2 + (y/b)^2 <= 1
@@ -67,6 +78,13 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
   if (!framebuffer || !object || !object->cur_sprite) return;
   Sprite *sprite = object->cur_sprite;
 
+  // Return if object is completely off-screen
+  Vector2 obj_screen = camera_world_to_screen(camera, object->position);
+  if (obj_screen.x + sprite->width < 0 || obj_screen.x >= camera->size.x ||
+      obj_screen.y + sprite->height < 0 || obj_screen.y >= camera->size.y) {
+    return;
+  }
+
   // Render shadow first
   render_shadow(framebuffer, camera, object, map);
 
@@ -74,9 +92,8 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
     for (int sx = 0; sx < sprite->width; sx++) {
       int src_x = object->flip_horizontal ? (sprite->width - 1 - sx) : sx;
 
-      Vector2 object_screen_coord = camera_world_to_screen(camera, object->position);
-      int screen_x = object_screen_coord.x + sx;
-      int screen_y = object_screen_coord.y + sy;
+      int screen_x = obj_screen.x + sx;
+      int screen_y = obj_screen.y + sy;
 
       if (!camera_is_visible(camera, (Vector2){screen_x, screen_y})) { continue; }
 
