@@ -84,8 +84,6 @@ void display_destroy(Display *d) {
 
 // Poll events and send them to input entity
 bool display_poll_events(Input *input) {
-  input_clear(input);
-
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
@@ -115,7 +113,7 @@ bool display_poll_events(Input *input) {
       break;
     }
   }
-  return !input_should_quit(input);
+  return !input->quit;
 }
 
 // Display the given frame buffer

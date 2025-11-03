@@ -77,7 +77,7 @@ Engine *engine_create(int width, int height, const char *title) {
     return NULL;
   }
 
-  input_init(&e->input);
+  e->input = (Input){0};
 
   // Allocate render buffer
   e->pixels = calloc(width * height, sizeof(uint32_t));
