@@ -1,4 +1,4 @@
-#include "graphics/alpha_blend.h"
+#include "alpha_blend.h"
 
 // Accepts ARGB src and dst colors, returns ARGB blended color
 uint32_t alpha_blend(uint32_t src, uint32_t dst) {

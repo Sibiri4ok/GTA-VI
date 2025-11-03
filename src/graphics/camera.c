@@ -1,4 +1,4 @@
-#include "graphics/camera.h"
+#include "camera.h"
 #include <stdlib.h>
 
 Camera *camera_create(float width, float height) {
