@@ -6,7 +6,7 @@
 typedef struct Engine Engine;
 
 Engine *engine_create(int width, int height, const char *title);
-void engine_destroy(Engine *e);
+void engine_free(Engine *e);
 
 bool engine_begin_frame(Engine *e);
 void engine_update(Engine *e);

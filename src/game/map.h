@@ -29,17 +29,19 @@ typedef enum {
 typedef struct Map {
   int width, height;
   int width_pix, height_pix;
-  TileType *tiles;
-  Sprite tile_sprites[TILE_MAX];
   uint32_t *pixels;
 
+  TileType *tiles;
+  Sprite tile_sprites[TILE_MAX];
+
   Sprite object_sprites[OBJ_MAX];
-  GameObject *objects;
-  int object_count;
+  GameObject *st_objs;
+  GameObject *dyn_objs;
+  GameObject **objects; // all objects sorted by depth
 } Map;
 
-Map *map_create(int width, int height);
-void map_destroy(Map *map);
+Map *map_create(int width, int height, int st_count, GameObject *dyn_objs);
+void map_free(Map *map);
 
 #define ISO_TILE_WIDTH 64
 #define ISO_TILE_HEIGHT 32

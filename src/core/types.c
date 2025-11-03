@@ -1,4 +1,4 @@
-#include "load_sprite.h"
+#include "types.h"
 #include "stb_image.h"
 #include <math.h>
 #include <stdint.h>

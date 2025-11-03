@@ -3,33 +3,37 @@
 #include "game/map.h"
 #include "graphics/alpha_blend.h"
 #include "graphics/coordinates.h"
+#include "stb_ds.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Renders multiple game objects
-// Objects must be sorted by depth! (y-coordinate)
-void render_objects(uint32_t *framebuffer, Camera *camera, GameObject *objects, int count) {
-  if (!framebuffer || !camera || !objects || count <= 0) return;
+int compare_objs_by_depth(const void *a, const void *b) {
+  const GameObject *obj_a = *(const GameObject **)a;
+  const GameObject *obj_b = *(const GameObject **)b;
 
-  for (int i = 0; i < count; i++) { render_object(framebuffer, camera, &objects[i]); }
+  // Sort by bottom edge of sprite for proper isometric depth
+  float ya = obj_a->position.y + (obj_a->cur_sprite ? obj_a->cur_sprite->height : 0);
+  float yb = obj_b->position.y + (obj_b->cur_sprite ? obj_b->cur_sprite->height : 0);
+
+  return (ya > yb) - (ya < yb);
 }
 
-static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *object) {
-  if (!framebuffer || !object || !object->sprite) return;
+static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *object, Map *map) {
+  if (!framebuffer || !object || !object->cur_sprite || !map) return;
 
   // Shadow size - simple ellipse
-  int shadow_width = object->sprite->width / 2;
+  int shadow_width = object->cur_sprite->width / 2;
   int shadow_height = shadow_width / 3;
 
   // Sun from bottom-left to top-right
-  int shadow_offset_x = object->sprite->width / 4;
-  int shadow_offset_y = -object->sprite->height / 6;
+  int shadow_offset_x = object->cur_sprite->width / 4;
+  int shadow_offset_y = -object->cur_sprite->height / 6;
 
-  // Shadow position at bottom center of object + offset
+  // Shadow center in screen coordinates
   Vector2 obj_screen = camera_world_to_screen(camera, object->position);
-  int center_x = obj_screen.x + object->sprite->width / 2 + shadow_offset_x;
-  int center_y = obj_screen.y + object->sprite->height + shadow_offset_y;
+  int center_x = obj_screen.x + object->cur_sprite->width / 2 + shadow_offset_x;
+  int center_y = obj_screen.y + object->cur_sprite->height + shadow_offset_y;
 
   for (int y = -shadow_height; y <= shadow_height; y++) {
     for (int x = -shadow_width; x <= shadow_width; x++) {
@@ -41,14 +45,15 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
       if (dist <= 1.0f) {
         // Gradient: darker in center, lighter at edges
         float alpha_factor = 1.0f - dist;
-        alpha_factor = alpha_factor * alpha_factor;       // Softer falloff
-        uint8_t alpha = (uint8_t)(alpha_factor * 100.0f); // Max alpha = 100
+        alpha_factor = alpha_factor * alpha_factor; // Softer falloff
+        uint8_t alpha = (uint8_t)(alpha_factor * 100.0f);
 
         uint32_t shadow_color = (alpha << 24); // Black with varying alpha
 
         int screen_x = center_x + x;
         int screen_y = center_y + y;
 
+        // Check visibility
         if (camera_is_visible(camera, (Vector2){screen_x, screen_y})) {
           int fb_idx = screen_y * (int)camera->size.x + screen_x;
           framebuffer[fb_idx] = alpha_blend(shadow_color, framebuffer[fb_idx]);
@@ -58,12 +63,12 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   }
 }
 
-void render_object(uint32_t *framebuffer, Camera *camera, GameObject *object) {
-  if (!framebuffer || !object) return;
-  Sprite *sprite = object->sprite;
+void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Map *map) {
+  if (!framebuffer || !object || !object->cur_sprite) return;
+  Sprite *sprite = object->cur_sprite;
 
   // Render shadow first
-  render_shadow(framebuffer, camera, object);
+  render_shadow(framebuffer, camera, object, map);
 
   for (int sy = 0; sy < sprite->height; sy++) {
     for (int sx = 0; sx < sprite->width; sx++) {
@@ -83,7 +88,15 @@ void render_object(uint32_t *framebuffer, Camera *camera, GameObject *object) {
   }
 }
 
-void render_frame_static(Map *map, uint32_t *framebuffer, Camera *camera) {
+// Renders multiple game objects
+// Objects must be sorted by depth! (y-coordinate)
+void render_objects(uint32_t *framebuffer, GameObject **objects, Camera *camera, Map *map) {
+  if (!framebuffer || !objects || !camera) return;
+
+  for (int i = 0; i < arrlen(objects); i++) { render_object(framebuffer, objects[i], camera, map); }
+}
+
+void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 
   // Offsets to center the map in pixel coordinates

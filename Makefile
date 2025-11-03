@@ -10,6 +10,7 @@ DEPS_DIR = deps
 
 SOURCES = $(shell find $(SRC_DIR) -type f -name '*.c')
 OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
+DEPS_OBJECTS = $(patsubst $(DEPS_DIR)/%.c,$(BUILD_DIR)/deps/%.o,$(wildcard $(DEPS_DIR)/*.c))
 DEPS = $(OBJECTS:.o=.d)
 
 TARGET = $(BUILD_DIR)/game_engine
@@ -30,8 +31,12 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(SRC_DIR) -I$(DEPS_DIR) -c $< -o $@
 
-$(TARGET): $(OBJECTS) | $(BUILD_DIR)
-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+$(BUILD_DIR)/deps/%.o: $(DEPS_DIR)/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	$(CC) -std=c99 -O2 -w -I$(DEPS_DIR) -c $< -o $@
+
+$(TARGET): $(OBJECTS) $(DEPS_OBJECTS) | $(BUILD_DIR)
+	$(CC) $(OBJECTS) $(DEPS_OBJECTS) -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/tests/test_framework.o: $(TEST_DIR)/test_framework.c | $(BUILD_DIR)/tests
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(SRC_DIR) -I$(DEPS_DIR) -c $< -o $@
@@ -39,7 +44,7 @@ $(BUILD_DIR)/tests/test_framework.o: $(TEST_DIR)/test_framework.c | $(BUILD_DIR)
 $(BUILD_DIR)/tests/%.o: $(TEST_DIR)/%.c | $(BUILD_DIR)/tests
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(SRC_DIR) -I$(DEPS_DIR) -I$(TEST_DIR) -c $< -o $@
 
-$(TEST_TARGET): $(TEST_FRAMEWORK_OBJ) $(TEST_OBJECTS) $(SRC_OBJECTS_FOR_TESTS) | $(BUILD_DIR)
+$(TEST_TARGET): $(TEST_FRAMEWORK_OBJ) $(TEST_OBJECTS) $(SRC_OBJECTS_FOR_TESTS) $(DEPS_OBJECTS) | $(BUILD_DIR)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 clean:

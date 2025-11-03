@@ -1,56 +1,33 @@
 #include "engine.h"
 #include "core/input.h"
+#include "core/types.h"
 #include "game/map.h"
 #include "graphics/camera.h"
 #include "graphics/display.h"
 #include "graphics/render.h"
-#include <graphics/load_sprite.h>
+#include "stb_ds.h"
+#include "stb_image.h"
+#include "types.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #define FIXED_TIMESTEP (1.0f / 60.0f)
-
-static int compare_objects_by_y(const void *a, const void *b) {
-  GameObject *obj_a = (GameObject *)a;
-  GameObject *obj_b = (GameObject *)b;
-
-  // Sort by bottom edge of sprite for proper isometric depth
-  float ya = obj_a->position.y + (obj_a->sprite ? obj_a->sprite->height : 0);
-  float yb = obj_b->position.y + (obj_b->sprite ? obj_b->sprite->height : 0);
-
-  return (ya > yb) - (ya < yb);
-}
+#define STATIC_OBJECTS_COUNT 100
 
 struct Engine {
   Display *display;
   Input input;
 
-  // Map
-  Map *map;
-
-  // Player
+  // Player sprites: default, back, forward
   GameObject *player;
-  Vector2 pl_velocity;
-
-  // Player sprites
-  Sprite sprite_default;
-  Sprite sprite_back;
-  Sprite sprite_forward;
-
+  Map *map;
   Camera *camera;
 
   // Render buffer
   uint32_t *pixels;
   int width;
   int height;
-
-  // Object render buffer (for sorting)
-  GameObject *render_objects;
-  int render_objects_capacity;
 
   // Fixed timestep: we accumulate time between updates
   uint32_t last_frame_time;
@@ -72,7 +49,7 @@ Engine *engine_create(int width, int height, const char *title) {
 
   e->camera = camera_create(width, height);
   if (!e->camera) {
-    display_destroy(e->display);
+    display_free(e->display);
     free(e);
     return NULL;
   }
@@ -82,56 +59,47 @@ Engine *engine_create(int width, int height, const char *title) {
   // Allocate render buffer
   e->pixels = calloc(width * height, sizeof(uint32_t));
   if (!e->pixels) {
-    camera_destroy(e->camera);
-    display_destroy(e->display);
+    camera_free(e->camera);
+    display_free(e->display);
     free(e);
     return NULL;
   }
 
-  // Create map (tile sprites are generated inside map_create)
-  e->map = map_create(25, 25);
-  if (!e->map) {
-    free(e->pixels);
-    camera_destroy(e->camera);
-    display_destroy(e->display);
-    free(e);
-    return NULL;
-  }
+  // Dynamic objects is only player for now
+  GameObject *dyn_objs = NULL;
+  arrpush(dyn_objs, (GameObject){0});
+  e->player = &dyn_objs[0];
 
   float scale = 1.0f / 16.0f;
-  e->sprite_default = load_sprite("assets/mario.png", scale);
-  e->sprite_back = load_sprite("assets/mario_back.png", scale);
-  e->sprite_forward = load_sprite("assets/mario_forward.png", scale);
-
-  // Initialize player at center
-  e->player = calloc(1, sizeof(GameObject));
-  if (!e->player) {
+  e->player->sprites = NULL;
+  arrpush(e->player->sprites, load_sprite("assets/mario.png", scale));
+  arrpush(e->player->sprites, load_sprite("assets/mario_back.png", scale));
+  arrpush(e->player->sprites, load_sprite("assets/mario_forward.png", scale));
+  if (arrlen(e->player->sprites) == 0) {
+    display_free(e->display);
+    camera_free(e->camera);
     free(e->pixels);
-    camera_destroy(e->camera);
-    display_destroy(e->display);
+    free(e);
+    arrfree(dyn_objs);
+    return NULL;
+  }
+  e->player->cur_sprite = &e->player->sprites[0];
+  e->player->flip_horizontal = false;
+  e->player->position = (Vector2){0.0f, 0.0f};
+  e->player->velocity = (Vector2){0.0f, 0.0f};
+
+  // Create map. Tiles and static objects are generated inside map_create
+  e->map = map_create(25, 25, STATIC_OBJECTS_COUNT, dyn_objs);
+  if (!e->map) {
+    free(e->pixels);
+    camera_free(e->camera);
+    display_free(e->display);
+    arrfree(dyn_objs);
     free(e);
     return NULL;
   }
-  e->player->sprite = &e->sprite_default;
-  e->player->flip_horizontal = false;
-
-  e->player->position = (Vector2){0.0f, 0.0f};
-  e->pl_velocity = (Vector2){0.0f, 0.0f};
 
   e->camera->target = e->player->position;
-
-  // Allocate render buffer for all objects (map objects + player)
-  e->render_objects_capacity = e->map->object_count + 1;
-  e->render_objects = calloc(e->render_objects_capacity, sizeof(GameObject));
-  if (!e->render_objects) {
-    free(e->player);
-    map_destroy(e->map);
-    free(e->pixels);
-    camera_destroy(e->camera);
-    display_destroy(e->display);
-    free(e);
-    return NULL;
-  }
 
   e->last_frame_time = display_get_ticks();
   e->accumulator = 0.0f;
@@ -139,19 +107,20 @@ Engine *engine_create(int width, int height, const char *title) {
   return e;
 }
 
-void engine_destroy(Engine *e) {
+void engine_free(Engine *e) {
   if (!e) return;
 
-  free_sprite(&e->sprite_default);
-  free_sprite(&e->sprite_back);
-  free_sprite(&e->sprite_forward);
+  // Free player sprites before freeing the map
+  // TODO: Keep sprites in some place and reuse them for dynamic objs
+  if (e->player && e->player->sprites) {
+    for (int i = 0; i < arrlen(e->player->sprites); i++) { free_sprite(&e->player->sprites[i]); }
+    arrfree(e->player->sprites);
+  }
 
-  if (e->render_objects) free(e->render_objects);
-  if (e->player) free(e->player);
-  if (e->map) map_destroy(e->map);
+  if (e->map) map_free(e->map);
   if (e->pixels) free(e->pixels);
-  if (e->camera) camera_destroy(e->camera);
-  if (e->display) display_destroy(e->display);
+  if (e->camera) camera_free(e->camera);
+  if (e->display) display_free(e->display);
   free(e);
 }
 
@@ -200,23 +169,23 @@ void engine_update(Engine *e) {
 
   // Update velocity and position
   float speed = 4.0f;
-  e->pl_velocity.x = ax * speed;
-  e->pl_velocity.y = ay * speed;
-  e->player->position.x += e->pl_velocity.x;
-  e->player->position.y += e->pl_velocity.y;
+  e->player->velocity.x = ax * speed;
+  e->player->velocity.y = ay * speed;
+  e->player->position.x += e->player->velocity.x;
+  e->player->position.y += e->player->velocity.y;
 
   // Update sprite orientation (vertical takes priority over horizontal)
-  if (e->pl_velocity.y < -0.1f) {
-    e->player->sprite = &e->sprite_forward;
-  } else if (e->pl_velocity.y > 0.1f) {
-    e->player->sprite = &e->sprite_back;
-  } else if (fabs(e->pl_velocity.x) > 0.1f) {
-    e->player->sprite = &e->sprite_default;
+  if (e->player->velocity.y < -0.1f) {
+    e->player->cur_sprite = &e->player->sprites[2]; // Forward sprite
+  } else if (e->player->velocity.y > 0.1f) {
+    e->player->cur_sprite = &e->player->sprites[1]; // Back sprite
+  } else if (fabs(e->player->velocity.x) > 0.1f) {
+    e->player->cur_sprite = &e->player->sprites[0]; // Default sprite
   }
 
-  if (e->pl_velocity.x < -0.1f) {
+  if (e->player->velocity.x < -0.1f) {
     e->player->flip_horizontal = true;
-  } else if (e->pl_velocity.x > 0.1f) {
+  } else if (e->player->velocity.x > 0.1f) {
     e->player->flip_horizontal = false;
   }
 
@@ -228,25 +197,13 @@ void engine_render(Engine *e) {
   if (!e) return;
 
   // Fill background
-  uint32_t bg_color = 0xFF963CFF;
+  uint32_t bg_color = 0xFF87CEEB;
   for (int i = 0; i < e->width * e->height; i++) { e->pixels[i] = bg_color; }
 
-  // Render map
-  render_frame_static(e->map, e->pixels, e->camera);
-
-  // Combine all objects for rendering (map objects + player)
-  int obj_count = 0;
-
-  // Copy map objects
-  for (int i = 0; i < e->map->object_count; i++) {
-    e->render_objects[obj_count++] = e->map->objects[i];
-  }
-  e->render_objects[obj_count++] = *e->player;
-
-  // Sort by Y coordinate
-  qsort(e->render_objects, obj_count, sizeof(GameObject), compare_objects_by_y);
-
-  render_objects(e->pixels, e->camera, e->render_objects, obj_count);
+  load_prerendered(e->pixels, e->map, e->camera);
+  // Sort objects by depth
+  qsort(e->map->objects, arrlen(e->map->objects), sizeof(GameObject *), compare_objs_by_depth);
+  render_objects(e->pixels, e->map->objects, e->camera, e->map);
 }
 
 void engine_end_frame(Engine *e) {
