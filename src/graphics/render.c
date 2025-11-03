@@ -45,8 +45,8 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
       if (dist <= 1.0f) {
         // Gradient: darker in center, lighter at edges
         float alpha_factor = 1.0f - dist;
-        alpha_factor = alpha_factor * alpha_factor; // Softer falloff
-        uint8_t alpha = (uint8_t)(alpha_factor * 100.0f);
+        alpha_factor = powf(alpha_factor, 1.5f); // Smooth and saturated falloff
+        uint8_t alpha = (uint8_t)(alpha_factor * 140.0f);
 
         uint32_t shadow_color = (alpha << 24); // Black with varying alpha
 
