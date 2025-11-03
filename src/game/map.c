@@ -19,7 +19,6 @@ static void map_gen_tiles(Map *map);
 static Sprite generate_tile(Color base, TileType type);
 static void load_st_sprites(Map *map);
 static void map_gen_st_objs(Map *map, int st_count);
-static void map_render_st_objs(Map *map);
 
 static uint32_t hash_u32(int x, int y) {
   uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
@@ -63,7 +62,6 @@ Map *map_create(int width, int height, int st_count, GameObject *dyn_objs) {
 
   load_st_sprites(map);
   map_gen_st_objs(map, st_count);
-  map_render_st_objs(map);
 
   GameObject **all_objects = NULL;
   for (int i = 0; i < arrlen(map->st_objs); i++) { arrpush(all_objects, &map->st_objs[i]); }
@@ -142,25 +140,6 @@ static void map_render_tiles(Map *map) {
       }
     }
   }
-}
-
-static void map_render_st_objs(Map *map) {
-  if (!map || !map->st_objs) return;
-
-  int offset_x = map->height * (ISO_TILE_WIDTH / 2);
-  int offset_y = map->height * (ISO_TILE_HEIGHT / 2);
-
-  // Fake camera that views the entire map
-  Camera fake_camera = {.size = {map->width_pix, map->height_pix},
-      .position = {(float)(map->width_pix / 2) - offset_x,
-          (float)(map->height_pix / 2) - offset_y}};
-
-  GameObject **st_obj_ptrs = NULL;
-  for (int i = 0; i < arrlen(map->st_objs); i++) { arrpush(st_obj_ptrs, &map->st_objs[i]); }
-  qsort(st_obj_ptrs, arrlen(st_obj_ptrs), sizeof(GameObject *), compare_objs_by_depth);
-
-  render_objects(map->pixels, st_obj_ptrs, &fake_camera, map);
-  arrfree(st_obj_ptrs);
 }
 
 static void map_gen_tiles(Map *map) {
