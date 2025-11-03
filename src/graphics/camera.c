@@ -15,7 +15,7 @@ Camera *camera_create(float width, float height) {
   return camera;
 }
 
-void camera_destroy(Camera *camera) {
+void camera_free(Camera *camera) {
   if (camera) { free(camera); }
 }
 

@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "game/map.h"
+#include "test_framework.h"
 
 REGISTER_TEST(map_create_and_destroy) {
   Map *map = map_create(20, 15);
@@ -8,7 +8,7 @@ REGISTER_TEST(map_create_and_destroy) {
   TEST_ASSERT_EQ(map->height, 15, "");
   TEST_ASSERT_NOT_NULL(map->tiles, "");
   TEST_ASSERT_NOT_NULL(map->pixels, "");
-  map_destroy(map);
+  map_free(map);
 }
 
 REGISTER_TEST(map_default_tiles) {
@@ -20,7 +20,7 @@ REGISTER_TEST(map_default_tiles) {
       TEST_ASSERT_EQ(map->tiles[y * map->width + x], TILE_GRASS, "");
     }
   }
-  map_destroy(map);
+  map_free(map);
 }
 
 REGISTER_TEST(map_pixel_buffer_allocated) {
@@ -29,9 +29,9 @@ REGISTER_TEST(map_pixel_buffer_allocated) {
   TEST_ASSERT_EQ(map->width_pix, (25 + 25) * (ISO_TILE_WIDTH / 2), "");
   TEST_ASSERT_EQ(map->height_pix, (25 + 25) * (ISO_TILE_HEIGHT / 2), "");
   TEST_ASSERT_NOT_NULL(map->pixels, "");
-  map_destroy(map);
+  map_free(map);
 }
 
 REGISTER_TEST(map_null_handling) {
-  map_destroy(NULL); // Should not crash
+  map_free(NULL); // Should not crash
 }

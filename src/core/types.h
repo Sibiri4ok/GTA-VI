@@ -20,8 +20,15 @@ typedef struct {
 
 typedef struct {
   Vector2 position; // World coordinates
-  Sprite *sprite;
+  Sprite *cur_sprite;
+  Sprite *sprites; // For player it's Default, Back, Forward (for now)
   bool flip_horizontal;
+
+  // Only for dynamic objects
+  Vector2 velocity;
 } GameObject;
+
+Sprite load_sprite(const char *path, float scale);
+void free_sprite(Sprite *sprite);
 
 #endif

@@ -10,7 +10,7 @@ REGISTER_TEST(camera_create_and_destroy) {
   TEST_ASSERT_FLOAT_EQ(camera->size.x, 800.0f, EPSILON, "");
   TEST_ASSERT_FLOAT_EQ(camera->size.y, 600.0f, EPSILON, "");
   TEST_ASSERT_FLOAT_EQ(camera->position.x, 0.0f, EPSILON, "");
-  camera_destroy(camera);
+  camera_free(camera);
 }
 
 REGISTER_TEST(camera_update_following) {
@@ -21,7 +21,7 @@ REGISTER_TEST(camera_update_following) {
   for (int i = 0; i < 100; i++) camera_update(camera, 0.016f);
   TEST_ASSERT(fabsf(camera->position.x - 100.0f) < 5.0f, "");
   TEST_ASSERT(fabsf(camera->position.y - 200.0f) < 5.0f, "");
-  camera_destroy(camera);
+  camera_free(camera);
 }
 
 REGISTER_TEST(camera_update_not_following) {
@@ -33,7 +33,7 @@ REGISTER_TEST(camera_update_not_following) {
   camera_update(camera, 0.016f);
   TEST_ASSERT_FLOAT_EQ(camera->position.x, 50.0f, EPSILON, "");
   TEST_ASSERT_FLOAT_EQ(camera->position.y, 50.0f, EPSILON, "");
-  camera_destroy(camera);
+  camera_free(camera);
 }
 
 REGISTER_TEST(camera_is_visible) {
@@ -43,7 +43,7 @@ REGISTER_TEST(camera_is_visible) {
   TEST_ASSERT(camera_is_visible(camera, (Vector2){450.0f, 350.0f}), "");
   TEST_ASSERT(!camera_is_visible(camera, (Vector2){1000.0f, 300.0f}), "");
   TEST_ASSERT(!camera_is_visible(camera, (Vector2){-200.0f, 300.0f}), "");
-  camera_destroy(camera);
+  camera_free(camera);
 }
 
 REGISTER_TEST(camera_world_screen_conversion) {
@@ -57,12 +57,12 @@ REGISTER_TEST(camera_world_screen_conversion) {
 
   TEST_ASSERT_FLOAT_EQ(back.x, world.x, EPSILON, "");
   TEST_ASSERT_FLOAT_EQ(back.y, world.y, EPSILON, "");
-  camera_destroy(camera);
+  camera_free(camera);
 }
 
 REGISTER_TEST(camera_null_handling) {
   Vector2 world = {100.0f, 200.0f};
   TEST_ASSERT(!camera_is_visible(NULL, world), "");
   camera_update(NULL, 0.016f);
-  camera_destroy(NULL);
+  camera_free(NULL);
 }

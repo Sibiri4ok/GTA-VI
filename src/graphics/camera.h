@@ -13,7 +13,7 @@ typedef struct Camera {
 } Camera;
 
 Camera *camera_create(float width, float height);
-void camera_destroy(Camera *camera);
+void camera_free(Camera *camera);
 void camera_update(Camera *camera, float delta_time);
 
 bool camera_is_visible(const Camera *camera, Vector2 pos);

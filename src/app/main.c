@@ -9,6 +9,6 @@ int main(void) {
     engine_end_frame(engine);
   }
 
-  engine_destroy(engine);
+  engine_free(engine);
   return 0;
 }

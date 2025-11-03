@@ -71,7 +71,7 @@ Display *display_create(int width, int height, float scale, const char *title) {
   return d;
 }
 
-void display_destroy(Display *d) {
+void display_free(Display *d) {
   if (!d) return;
 
   if (d->texture) SDL_DestroyTexture(d->texture);
