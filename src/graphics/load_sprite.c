@@ -1,5 +1,5 @@
-#include "graphics/load_sprite.h"
-#include "external/stb_image.h"
+#include "load_sprite.h"
+#include "stb_image.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -19,8 +19,7 @@ Sprite load_sprite(const char *path, float scale) {
   sprite.width = scaled_width;
   sprite.height = scaled_height;
 
-  size_t pixels_count = (size_t)scaled_width * (size_t)scaled_height;
-  sprite.pixels = (uint32_t *)malloc(pixels_count * sizeof(uint32_t));
+  sprite.pixels = (uint32_t *)calloc(scaled_width * scaled_height, sizeof(uint32_t));
   if (!sprite.pixels) {
     stbi_image_free(data);
     sprite.width = sprite.height = 0;
@@ -45,7 +44,7 @@ Sprite load_sprite(const char *path, float scale) {
       uint8_t b = data[src_idx + 2];
       uint8_t a = data[src_idx + 3];
 
-      sprite.pixels[(size_t)y * scaled_width + x] =
+      sprite.pixels[y * scaled_width + x] =
           ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
     }
   }

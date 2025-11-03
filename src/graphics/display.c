@@ -1,4 +1,4 @@
-#include "graphics/display.h"
+#include "display.h"
 #include "core/input.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>

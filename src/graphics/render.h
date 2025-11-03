@@ -1,9 +1,9 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include "camera.h"
 #include "core/types.h"
-#include <game/map.h>
-#include <graphics/camera.h>
+#include "game/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 

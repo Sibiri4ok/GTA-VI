@@ -1,8 +1,8 @@
-#include "graphics/render.h"
-#include <game/map.h>
-#include <graphics/alpha_blend.h>
-#include <graphics/camera.h>
-#include <graphics/coordinates.h>
+#include "render.h"
+#include "camera.h"
+#include "game/map.h"
+#include "graphics/alpha_blend.h"
+#include "graphics/coordinates.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

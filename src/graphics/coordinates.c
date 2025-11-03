@@ -1,3 +1,4 @@
+#include "coordinates.h"
 #include "game/map.h"
 
 Vector2 iso_tile_to_world(int x, int y) {

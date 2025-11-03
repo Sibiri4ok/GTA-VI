@@ -1,4 +1,4 @@
-#include "core/engine.h"
+#include "engine.h"
 
 int main(void) {
   Engine *engine = engine_create(800, 600, "GTA VI");
