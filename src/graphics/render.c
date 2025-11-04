@@ -1,9 +1,9 @@
 #include "render.h"
 #include "camera.h"
-#include "game/map.h"
 #include "graphics/alpha_blend.h"
 #include "graphics/coordinates.h"
 #include "stb_ds.h"
+#include "world/map.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

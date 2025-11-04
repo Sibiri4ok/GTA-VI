@@ -1,19 +1,22 @@
 #include "engine.h"
 #include "core/input.h"
 #include "core/types.h"
-#include "game/map.h"
 #include "graphics/camera.h"
 #include "graphics/display.h"
 #include "graphics/render.h"
 #include "stb_ds.h"
 #include "stb_image.h"
 #include "types.h"
+#include "world/map.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #define FIXED_TIMESTEP (1.0f / 60.0f)
+#define MAP_WIDTH 40
+#define MAP_HEIGHT 40
 #define STATIC_OBJECTS_COUNT 100
+#define PLAYER_SPEED 6.0f
 
 struct Engine {
   Display *display;
@@ -89,7 +92,7 @@ Engine *engine_create(int width, int height, const char *title) {
   e->player->velocity = (Vector2){0.0f, 0.0f};
 
   // Create map. Tiles and static objects are generated inside map_create
-  e->map = map_create(25, 25, STATIC_OBJECTS_COUNT, dyn_objs);
+  e->map = map_create(MAP_WIDTH, MAP_HEIGHT, STATIC_OBJECTS_COUNT, dyn_objs);
   if (!e->map) {
     free(e->pixels);
     camera_free(e->camera);
@@ -168,9 +171,8 @@ void engine_update(Engine *e) {
   }
 
   // Update velocity and position
-  float speed = 4.0f;
-  e->player->velocity.x = ax * speed;
-  e->player->velocity.y = ay * speed;
+  e->player->velocity.x = ax * PLAYER_SPEED;
+  e->player->velocity.y = ay * PLAYER_SPEED;
   e->player->position.x += e->player->velocity.x;
   e->player->position.y += e->player->velocity.y;
 
