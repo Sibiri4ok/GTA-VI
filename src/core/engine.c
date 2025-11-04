@@ -131,7 +131,7 @@ void engine_render(Engine *e, GameObject **objects, int count) {
 
   // Sort objects by depth
   qsort(objects, count, sizeof(GameObject *), compare_objs_by_depth);
-  render_objects(e->pixels, objects, count, e->camera, e->map);
+  render_objects(e->pixels, objects, count, e->camera);
 }
 
 void engine_end_frame(Engine *e) {
