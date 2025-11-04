@@ -3,7 +3,7 @@
 
 #include "camera.h"
 #include "core/types.h"
-#include "game/map.h"
+#include "world/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 
