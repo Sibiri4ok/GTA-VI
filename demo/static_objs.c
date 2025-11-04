@@ -65,6 +65,7 @@ GameObject *gen_st_objs(Map *map, int count) {
     obj.position = (Vector){(float)world.x, (float)world.y};
     obj.cur_sprite = sprite;
     obj.flip_horizontal = false;
+    obj.data = NULL;
     arrpush(objects, obj);
   }
 

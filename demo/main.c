@@ -8,7 +8,7 @@
 
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
-#define STATIC_OBJ_COUNT 300
+#define STATIC_OBJ_COUNT 100
 #define PLAYER_SPEED 5.0f
 
 typedef struct mario_sprites {
@@ -19,11 +19,10 @@ typedef struct mario_sprites {
 
 static mario_sprites load_mario_sprs();
 static GameObject *gen_dyn_objects(mario_sprites *sprs);
-static void mario_update(Input *input, GameObject *player, struct mario_sprites *sprs);
+static void mario_update(Input *input, GameObject *player);
 static void update(Input *input, void *user_data);
 
 typedef struct callback_data {
-  mario_sprites sprs;
   GameObject *objects;
 } callback_data;
 
@@ -40,7 +39,7 @@ int main(void) {
 
   GameObject *st_objs = gen_st_objs(map, STATIC_OBJ_COUNT);
 
-  callback_data cb_data = {sprs, dyn_objs};
+  callback_data cb_data = {dyn_objs};
   GameObject **objects = NULL;
   for (int i = 0; i < arrlen(st_objs); i++) { arrpush(objects, &st_objs[i]); }
   for (int i = 0; i < arrlen(dyn_objs); i++) { arrpush(objects, &dyn_objs[i]); }
@@ -70,12 +69,11 @@ static mario_sprites load_mario_sprs() {
 
 static GameObject *gen_dyn_objects(mario_sprites *sprs) {
   GameObject *objects = NULL;
-  GameObject player = (GameObject){
-      .cur_sprite = &sprs->def,
+  GameObject player = (GameObject){.cur_sprite = &sprs->def,
       .flip_horizontal = false,
       .velocity = (Vector){0.0f, 0.0f},
       .position = iso_tile_to_world(MAP_WIDTH / 2, MAP_HEIGHT / 2, MAP_HEIGHT),
-  };
+      .data = sprs};
   GameObject npc1 = player;
   GameObject npc2 = player;
   npc1.cur_sprite = &sprs->back;
@@ -87,7 +85,7 @@ static GameObject *gen_dyn_objects(mario_sprites *sprs) {
   return objects;
 }
 
-static void mario_update(Input *input, GameObject *player, mario_sprites *sprs) {
+static void mario_update(Input *input, GameObject *player) {
   float ax = 0.0f, ay = 0.0f;
   if (input->a) ax -= 1.0f;
   if (input->d) ax += 1.0f;
@@ -108,6 +106,7 @@ static void mario_update(Input *input, GameObject *player, mario_sprites *sprs) 
   player->position.y += player->velocity.y;
 
   // Update sprite orientation (vertical takes priority over horizontal)
+  mario_sprites *sprs = (mario_sprites *)player->data;
   if (player->velocity.y < -0.1f) {
     player->cur_sprite = &sprs->forward;
   } else if (player->velocity.y > 0.1f) {
@@ -152,7 +151,7 @@ static void npc_run_away(GameObject *player, GameObject *npc) {
 static void update(Input *input, void *user_data) {
   callback_data *cb_data = (callback_data *)user_data;
 
-  mario_update(input, &cb_data->objects[0], &cb_data->sprs);
+  mario_update(input, &cb_data->objects[0]);
   npc_push_away(&cb_data->objects[0], &cb_data->objects[1]);
   npc_run_away(&cb_data->objects[0], &cb_data->objects[2]);
 }

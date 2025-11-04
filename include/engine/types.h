@@ -25,6 +25,8 @@ typedef struct {
   Sprite *cur_sprite; // Current sprite to render
   bool flip_horizontal;
 
+  // Pointer on a custom user data
+  void *data;
   // In-moment position change.
   // Needed only for convenience in movement calculations.
   // Only for dynamic objects.
