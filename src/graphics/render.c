@@ -92,14 +92,13 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera) {
 
   for (int sy = 0; sy < sprite->height; sy++) {
     for (int sx = 0; sx < sprite->width; sx++) {
-      int src_x = object->flip_horizontal ? (sprite->width - 1 - sx) : sx;
 
       int screen_x = obj_screen.x + sx;
       int screen_y = obj_screen.y + sy;
 
       if (!camera_is_visible(camera, (Vector){screen_x, screen_y})) { continue; }
 
-      uint32_t src = sprite->pixels[sy * sprite->width + src_x];
+      uint32_t src = sprite->pixels[sy * sprite->width + sx];
       int fb_idx = screen_y * camera->size.x + screen_x;
       uint32_t dst = framebuffer[fb_idx];
       framebuffer[fb_idx] = alpha_blend(src, dst);
