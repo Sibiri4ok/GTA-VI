@@ -5,6 +5,7 @@
 #include <engine/map.h>
 #include <math.h>
 #include <stb_ds.h>
+#include <stdio.h>
 
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
@@ -45,6 +46,7 @@ int main(void) {
   for (int i = 0; i < arrlen(dyn_objs); i++) { arrpush(objects, &dyn_objs[i]); }
   while (engine_begin_frame(engine, update, &cb_data)) {
     engine_render(engine, objects, arrlen(objects));
+    printf("FPS: %d\n", (int)engine_get_fps(engine));
     engine_end_frame(engine);
   }
 

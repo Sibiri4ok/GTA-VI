@@ -140,6 +140,6 @@ float display_get_fps(Display *d) {
   return d ? d->fps : 0.0f;
 }
 
-uint32_t display_get_ticks() {
-  return SDL_GetTicks();
+uint64_t display_get_ticks() {
+  return SDL_GetTicks64();
 }

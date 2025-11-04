@@ -27,7 +27,7 @@ struct Engine {
   int height;
 
   // Fixed timestep: we accumulate time between updates
-  uint32_t last_frame_time;
+  uint64_t last_frame_time;
   float accumulator;
 };
 
@@ -94,12 +94,10 @@ void engine_free(Engine *e) {
 bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data), void *user_data) {
   if (!e) return false;
 
-  printf("FPS: %d\n", (int)engine_get_fps(e));
-
   if (!display_poll_events(&e->input)) { return false; }
 
   // Fixed timestep: measure frame time
-  uint32_t current_time = display_get_ticks();
+  uint64_t current_time = display_get_ticks();
   float frame_time = (current_time - e->last_frame_time) / 1000.0f;
   e->last_frame_time = current_time;
 
@@ -141,4 +139,9 @@ void engine_end_frame(Engine *e) {
 
 float engine_get_fps(Engine *e) {
   return e ? display_get_fps(e->display) : 0.0f;
+}
+
+// Get the number of milliseconds since the engine was created
+uint64_t engine_get_time(Engine *e) {
+  return e ? display_get_ticks() : 0;
 }
