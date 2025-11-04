@@ -23,7 +23,6 @@ typedef struct {
   // World coordinates center is top-left of the map
   Vector position;
   Sprite *cur_sprite; // Current sprite to render
-  bool flip_horizontal;
 
   // Pointer on a custom user data
   void *data;
