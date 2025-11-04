@@ -1,6 +1,6 @@
 #include "display.h"
-#include "core/input.h"
 #include <SDL2/SDL.h>
+#include <engine/input.h>
 #include <stdio.h>
 #include <stdlib.h>
 

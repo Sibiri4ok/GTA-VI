@@ -1,40 +1,28 @@
-#include "world/map.h"
-#include "core/types.h"
+#include "core/types_priv.h"
 #include "graphics/alpha_blend.h"
 #include "graphics/camera.h"
-#include "graphics/coordinates.h"
 #include "graphics/render.h"
-#include "stb_ds.h"
+#include "random/random_priv.h"
+#include "world/map_priv.h"
+#include <engine/coordinates.h>
+#include <engine/random.h>
+#include <engine/types.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static uint32_t hash_u32(int x, int y);
-static float rand01(int x, int y);
 static bool map_is_valid_position(const Map *map, int x, int y);
 static TileType map_get_tile(const Map *map, int x, int y);
 static void map_render_tiles(Map *map);
 static void map_gen_tiles(Map *map);
-static Sprite generate_tile(Color base, TileType type);
-static void load_st_sprites(Map *map);
-static void map_gen_st_objs(Map *map, int st_count);
+static Sprite gen_tile(Color base, TileType type);
 
-static uint32_t hash_u32(int x, int y) {
-  uint32_t h = (uint32_t)(x * 374761393u + y * 668265263u);
-  h = (h ^ (h >> 13)) * 1274126177u;
-  return h ^ (h >> 16);
-}
-
-static float rand01(int x, int y) {
-  return (hash_u32(x, y) & 0xFFFF) / 65535.0f;
-}
-
-Map *map_create(int width, int height, int st_count, GameObject *dyn_objs) {
+// Create map. Tiles are generated inside map_create
+// Pre-render tiles into buffer
+Map *map_create(int width, int height) {
   Map *map = (Map *)calloc(1, sizeof(Map));
   if (!map) { return NULL; }
-
-  map->dyn_objs = dyn_objs;
 
   map->width = width;
   map->height = height;
@@ -60,36 +48,34 @@ Map *map_create(int width, int height, int st_count, GameObject *dyn_objs) {
   map_gen_tiles(map);
   map_render_tiles(map);
 
-  load_st_sprites(map);
-  map_gen_st_objs(map, st_count);
-
-  GameObject **all_objects = NULL;
-  for (int i = 0; i < arrlen(map->st_objs); i++) { arrpush(all_objects, &map->st_objs[i]); }
-  for (int i = 0; i < arrlen(map->dyn_objs); i++) { arrpush(all_objects, &map->dyn_objs[i]); }
-  qsort(all_objects, arrlen(all_objects), sizeof(GameObject *), compare_objs_by_depth);
-  map->objects = all_objects;
-
   return map;
 }
 
 void map_free(Map *map) {
   if (!map) return;
 
-  for (int i = 0; i < TILE_MAX; i++) {
-    if (map->tile_sprites[i].pixels) { free_sprite(&map->tile_sprites[i]); }
-  }
-
-  for (int i = 0; i < OBJ_MAX; i++) {
-    if (map->object_sprites[i].pixels) { free_sprite(&map->object_sprites[i]); }
-  }
-
-  if (map->st_objs) { arrfree(map->st_objs); }
-  if (map->dyn_objs) { arrfree(map->dyn_objs); }
-  if (map->tiles) { free(map->tiles); }
   if (map->pixels) { free(map->pixels); }
-  if (map->objects) { arrfree(map->objects); }
-
+  for (int i = 0; i < TILE_MAX; i++) { free_sprite(&map->tile_sprites[i]); }
+  if (map->tiles) { free(map->tiles); }
   free(map);
+}
+
+// Returns map size in pixels
+VectorU32 map_get_size(const Map *map) {
+  VectorU32 size = {0, 0};
+  if (!map) return size;
+
+  size.x = (uint32_t)map->width_pix;
+  size.y = (uint32_t)map->height_pix;
+  return size;
+}
+
+// Returns pixel color at given map pixel coordinates
+// If coordinates are out of bounds, returns 0
+uint32_t map_get_pixel(const Map *map, int x, int y) {
+  if (!map || x < 0 || y < 0 || x >= map->width_pix || y >= map->height_pix) return 0;
+
+  return map->pixels[y * map->width_pix + x];
 }
 
 static bool map_is_valid_position(const Map *map, int x, int y) {
@@ -116,7 +102,7 @@ static void map_render_tiles(Map *map) {
       Sprite *sprite = &map->tile_sprites[tile];
       if (!sprite->pixels) continue;
 
-      Vector2 world_pos = iso_tile_to_world(xx, yy, map->height);
+      Vector world_pos = iso_tile_to_world(xx, yy, map->height);
 
       int map_x = (int)(world_pos.x - (ISO_TILE_WIDTH / 2));
       int map_y = (int)world_pos.y;
@@ -147,7 +133,6 @@ static void map_gen_tiles(Map *map) {
     Color color = (Color){255, 128, 128, 128};
     switch (i) {
     case TILE_GROUND: color = (Color){255, 139, 90, 60}; break;
-    case TILE_SHADOW: color = (Color){120, 0, 0, 0}; break;
     case TILE_WATER: color = (Color){255, 30, 120, 200}; break;
     case TILE_SAND: color = (Color){255, 235, 210, 160}; break;
     case TILE_ROCK: color = (Color){255, 140, 140, 150}; break;
@@ -155,11 +140,11 @@ static void map_gen_tiles(Map *map) {
     default: break;
     }
 
-    map->tile_sprites[i] = generate_tile(color, (TileType)i);
+    map->tile_sprites[i] = gen_tile(color, (TileType)i);
   }
 }
 
-static Sprite generate_tile(Color base, TileType type) {
+static Sprite gen_tile(Color base, TileType type) {
   const int w = ISO_TILE_WIDTH;
   const int h = ISO_TILE_HEIGHT;
 
@@ -228,12 +213,6 @@ static Sprite generate_tile(Color base, TileType type) {
         g *= 1.0f + rough;
         b *= 1.0f + rough;
       } break;
-      case TILE_SHADOW: {
-        r = 0.0f;
-        g = 0.0f;
-        b = 0.0f;
-        a = 120.0f;
-      } break;
       default: {
         r *= 1.0f + n;
         g *= 1.0f + n;
@@ -261,61 +240,15 @@ static Sprite generate_tile(Color base, TileType type) {
   return sprite;
 }
 
-static void load_st_sprites(Map *map) {
-  if (!map) return;
+// Generate a random position within the map boundaries, considering a margin
+VectorU32 map_gen_random_position(const Map *map, uint32_t margin) {
+  VectorU32 pos = {0, 0};
+  if (!map) return pos;
 
-  map->object_sprites[OBJ_BUSH1] = load_sprite("assets/bush1.png", 1.5f);
-  map->object_sprites[OBJ_BUSH2] = load_sprite("assets/bush2.png", 1.5f);
-  map->object_sprites[OBJ_BUSH3] = load_sprite("assets/bush3.png", 1.5f);
-  map->object_sprites[OBJ_TREE] = load_sprite("assets/tree.png", 2.0f);
-  map->object_sprites[OBJ_CACTUS] = load_sprite("assets/cactus1.png", 1.0f);
-  map->object_sprites[OBJ_PALM] = load_sprite("assets/palm.png", 2.5f);
-}
+  uint32_t range_x = map->width_pix - margin * 2;
+  uint32_t range_y = map->height_pix - margin * 2;
+  pos.x = (rand_big() % range_x) + margin;
+  pos.y = (rand_big() % range_y) + margin;
 
-static void map_gen_st_objs(Map *map, int st_count) {
-  if (!map) return;
-
-  // Margin in pixels for largest sprite
-  int margin_px = 80;
-
-  int attempt = 0;
-  while (arrlen(map->st_objs) < st_count) {
-    attempt++;
-    // Random object type (determine first to know sprite size)
-    ObjectType type = hash_u32(attempt, 2) % OBJ_MAX;
-    Sprite *sprite = &map->object_sprites[type];
-
-    if (!sprite->pixels) continue;
-
-    // Random world position
-    int range_x = map->width_pix - margin_px * 2;
-    int range_y = map->height_pix - margin_px * 2;
-
-    int world_x = (hash_u32(attempt, 0) % range_x) + margin_px;
-    int world_y = (hash_u32(attempt, 1) % range_y) + margin_px;
-
-    // Check if sprite corners are within map pixel bounds
-    if (world_x < 0 || world_x + sprite->width >= map->width_pix || world_y < 0 ||
-        world_y + sprite->height >= map->height_pix) {
-      continue;
-    }
-
-    // Check that the pixel at this position is not transparent (inside diamond)
-    int center_x = world_x + sprite->width / 2;
-    int center_y = world_y + sprite->height;
-
-    if (center_x >= 0 && center_x < map->width_pix && center_y >= 0 && center_y < map->height_pix) {
-      uint32_t pixel = map->pixels[center_y * map->width_pix + center_x];
-      // Check if pixel is not background (has alpha > 0)
-      if ((pixel >> 24) == 0) {
-        continue; // Outside diamond shape
-      }
-    }
-
-    GameObject obj = {0};
-    obj.position = (Vector2){(float)world_x, (float)world_y};
-    obj.cur_sprite = sprite;
-    obj.flip_horizontal = false;
-    arrpush(map->st_objs, obj);
-  }
+  return pos;
 }

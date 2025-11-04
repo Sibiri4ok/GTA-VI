@@ -1,9 +1,8 @@
 #include "render.h"
 #include "camera.h"
 #include "graphics/alpha_blend.h"
-#include "graphics/coordinates.h"
-#include "stb_ds.h"
-#include "world/map.h"
+#include "world/map_priv.h"
+#include <engine/coordinates.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +30,7 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   int shadow_offset_y = -object->cur_sprite->height / 6;
 
   // Shadow center in screen coordinates
-  Vector2 obj_screen = camera_world_to_screen(camera, object->position);
+  Vector obj_screen = camera_world_to_screen(camera, object->position);
   int center_x = obj_screen.x + object->cur_sprite->width / 2 + shadow_offset_x;
   int center_y = obj_screen.y + object->cur_sprite->height + shadow_offset_y;
 
@@ -65,7 +64,7 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
         int screen_y = center_y + y;
 
         // Check visibility
-        if (camera_is_visible(camera, (Vector2){screen_x, screen_y})) {
+        if (camera_is_visible(camera, (Vector){screen_x, screen_y})) {
           int fb_idx = screen_y * (int)camera->size.x + screen_x;
           framebuffer[fb_idx] = alpha_blend(shadow_color, framebuffer[fb_idx]);
         }
@@ -79,7 +78,7 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
   Sprite *sprite = object->cur_sprite;
 
   // Return if object is completely off-screen
-  Vector2 obj_screen = camera_world_to_screen(camera, object->position);
+  Vector obj_screen = camera_world_to_screen(camera, object->position);
   if (obj_screen.x + sprite->width < 0 || obj_screen.x >= camera->size.x ||
       obj_screen.y + sprite->height < 0 || obj_screen.y >= camera->size.y) {
     return;
@@ -95,7 +94,7 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
       int screen_x = obj_screen.x + sx;
       int screen_y = obj_screen.y + sy;
 
-      if (!camera_is_visible(camera, (Vector2){screen_x, screen_y})) { continue; }
+      if (!camera_is_visible(camera, (Vector){screen_x, screen_y})) { continue; }
 
       uint32_t src = sprite->pixels[sy * sprite->width + src_x];
       int fb_idx = screen_y * camera->size.x + screen_x;
@@ -107,16 +106,16 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
 
 // Renders multiple game objects
 // Objects must be sorted by depth! (y-coordinate)
-void render_objects(uint32_t *framebuffer, GameObject **objects, Camera *camera, Map *map) {
+void render_objects(uint32_t *framebuffer, GameObject **objects, int count, Camera *camera, Map *map) {
   if (!framebuffer || !objects || !camera) return;
 
-  for (int i = 0; i < arrlen(objects); i++) { render_object(framebuffer, objects[i], camera, map); }
+  for (int i = 0; i < count; i++) { render_object(framebuffer, objects[i], camera, map); }
 }
 
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 
-  Vector2 top_left_world = camera_screen_to_world(camera, (Vector2){0, 0});
+  Vector top_left_world = camera_screen_to_world(camera, (Vector){0, 0});
   int map_start_x = (int)top_left_world.x;
   int map_start_y = (int)top_left_world.y;
 
