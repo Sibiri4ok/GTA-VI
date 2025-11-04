@@ -116,14 +116,9 @@ void render_objects(uint32_t *framebuffer, GameObject **objects, Camera *camera,
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 
-  // Offsets to center the map in pixel coordinates
-  int offset_x = map->height * (ISO_TILE_WIDTH / 2);
-  int offset_y = map->height * (ISO_TILE_HEIGHT / 2);
-
-  // Calculate top-left corner of visible area in map coordinates (once!)
   Vector2 top_left_world = camera_screen_to_world(camera, (Vector2){0, 0});
-  int map_start_x = (int)top_left_world.x + offset_x;
-  int map_start_y = (int)top_left_world.y + offset_y;
+  int map_start_x = (int)top_left_world.x;
+  int map_start_y = (int)top_left_world.y;
 
   // Render visible part of the map
   for (int screen_y = 0; screen_y < camera->size.y; screen_y++) {

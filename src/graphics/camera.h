@@ -4,7 +4,7 @@
 #include "core/types.h"
 
 typedef struct Camera {
-  Vector2 position;
+  Vector2 position; // top-left corner in world coordinates
   Vector2 size;
   Vector2 target;
   Vector2 world_bounds;
