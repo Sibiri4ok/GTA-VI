@@ -1,7 +1,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include "core/input.h"
+#include <engine/input.h>
 #include <stdbool.h>
 #include <stdint.h>
 

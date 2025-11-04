@@ -6,11 +6,11 @@
 
 typedef struct {
   float x, y;
-} Vector2;
+} Vector;
 
 typedef struct {
-  uint8_t a, r, g, b;
-} Color;
+  uint32_t x, y;
+} VectorU32;
 
 typedef struct {
   uint32_t *pixels;
@@ -19,13 +19,12 @@ typedef struct {
 } Sprite;
 
 typedef struct {
-  Vector2 position; // World coordinates
+  Vector position; // World coordinates
   Sprite *cur_sprite;
-  Sprite *sprites; // For player it's Default, Back, Forward (for now)
   bool flip_horizontal;
 
   // Only for dynamic objects
-  Vector2 velocity;
+  Vector velocity;
 } GameObject;
 
 Sprite load_sprite(const char *path, float scale);

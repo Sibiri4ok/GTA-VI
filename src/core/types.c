@@ -1,5 +1,5 @@
-#include "types.h"
 #include "stb_image.h"
+#include <engine/types.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -55,10 +55,5 @@ Sprite load_sprite(const char *path, float scale) {
 
 void free_sprite(Sprite *sprite) {
   if (!sprite) return;
-  if (sprite->pixels) {
-    free(sprite->pixels);
-    sprite->pixels = NULL;
-  }
-  sprite->width = 0;
-  sprite->height = 0;
+  if (sprite->pixels) { free(sprite->pixels); }
 }

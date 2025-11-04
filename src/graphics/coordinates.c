@@ -1,8 +1,10 @@
-#include "coordinates.h"
-#include "world/map.h"
+#include "world/map_priv.h"
+#include <engine/coordinates.h>
 
-Vector2 iso_tile_to_world(int x, int y, int map_height) {
-  Vector2 world;
+// Convert isometric tile coordinates to world coordinates
+// Accepts isometric x, y tile coordinates and map height (in tiles)
+Vector iso_tile_to_world(int x, int y, int map_height) {
+  Vector world;
   // Add offset so all world x-coordinates are positive
   int offset = map_height * (ISO_TILE_WIDTH / 2);
   world.x = (x - y) * (ISO_TILE_WIDTH / 2.0f) + offset;
@@ -10,8 +12,10 @@ Vector2 iso_tile_to_world(int x, int y, int map_height) {
   return world;
 }
 
-Vector2 iso_world_to_tile(Vector2 world_pos, int map_height) {
-  Vector2 tile;
+// Convert world coordinates to isometric tile coordinates
+// Accepts world position and map height (in tiles)
+Vector iso_world_to_tile(Vector world_pos, int map_height) {
+  Vector tile;
   float inv_tile_w = 2.0f / ISO_TILE_WIDTH;
   float inv_tile_h = 2.0f / ISO_TILE_HEIGHT;
 
