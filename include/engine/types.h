@@ -29,11 +29,23 @@ typedef struct {
   void *data;
   // In-moment position change.
   // Needed only for convenience in movement calculations.
-  // Only for dynamic objects.
+  // Doesn't used by engine, only by user.
+  // Only for dynamic objects (you can determine which is which by yourself).
   Vector velocity;
 } GameObject;
 
 Sprite load_sprite(const char *path, float scale);
 void free_sprite(Sprite *sprite);
+
+// Load spritesheet and split into individual frames.
+// Returns array of Sprite (frame_count elements).
+// Frames are read left-to-right, top-to-bottom.
+// Scale is applied to each frame.
+Sprite *load_spritesheet_frames(const char *path,
+    int frame_width,
+    int frame_height,
+    int frame_count,
+    float scale);
+void free_spritesheet_frames(Sprite *frames, int frame_count);
 
 #endif
