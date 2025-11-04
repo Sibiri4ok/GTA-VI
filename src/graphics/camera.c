@@ -23,10 +23,15 @@ void camera_update(Camera *camera, float delta_time) {
   if (!camera) return;
 
   if (camera->following) {
+    // We want to camera position (top-left corner) be shifted by half size from target
+    Vector2 desired;
+    desired.x = camera->target.x - camera->size.x / 2.0f;
+    desired.y = camera->target.y - camera->size.y / 2.0f;
+
     // Smoothly follow the target
     Vector2 diff;
-    diff.x = camera->target.x - camera->position.x;
-    diff.y = camera->target.y - camera->position.y;
+    diff.x = desired.x - camera->position.x;
+    diff.y = desired.y - camera->position.y;
 
     float lerp = 15.0f * delta_time;
     if (lerp > 1.0f) lerp = 1.0f;
@@ -46,8 +51,8 @@ Vector2 camera_world_to_screen(const Camera *camera, Vector2 world_pos) {
   if (!camera) return world_pos;
 
   Vector2 screen;
-  screen.x = world_pos.x - camera->position.x + camera->size.x / 2.0f;
-  screen.y = world_pos.y - camera->position.y + camera->size.y / 2.0f;
+  screen.x = world_pos.x - camera->position.x;
+  screen.y = world_pos.y - camera->position.y;
   return screen;
 }
 
@@ -55,7 +60,7 @@ Vector2 camera_screen_to_world(const Camera *camera, Vector2 screen_pos) {
   if (!camera) return screen_pos;
 
   Vector2 world;
-  world.x = screen_pos.x + camera->position.x - camera->size.x / 2.0f;
-  world.y = screen_pos.y + camera->position.y - camera->size.y / 2.0f;
+  world.x = screen_pos.x + camera->position.x;
+  world.y = screen_pos.y + camera->position.y;
   return world;
 }

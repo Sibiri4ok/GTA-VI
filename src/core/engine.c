@@ -2,6 +2,7 @@
 #include "core/input.h"
 #include "core/types.h"
 #include "graphics/camera.h"
+#include "graphics/coordinates.h"
 #include "graphics/display.h"
 #include "graphics/render.h"
 #include "stb_ds.h"
@@ -88,7 +89,7 @@ Engine *engine_create(int width, int height, const char *title) {
   }
   e->player->cur_sprite = &e->player->sprites[0];
   e->player->flip_horizontal = false;
-  e->player->position = (Vector2){0.0f, 0.0f};
+  e->player->position = iso_tile_to_world(MAP_WIDTH / 2, MAP_HEIGHT / 2, MAP_HEIGHT);
   e->player->velocity = (Vector2){0.0f, 0.0f};
 
   // Create map. Tiles and static objects are generated inside map_create

@@ -116,11 +116,9 @@ static void map_render_tiles(Map *map) {
       Sprite *sprite = &map->tile_sprites[tile];
       if (!sprite->pixels) continue;
 
-      Vector2 world_pos = iso_tile_to_world(xx, yy);
+      Vector2 world_pos = iso_tile_to_world(xx, yy, map->height);
 
-      // Convert world coordinates so that x is not negative
-      int offset_x = map->height * (ISO_TILE_WIDTH / 2);
-      int map_x = (int)(world_pos.x + offset_x - (ISO_TILE_WIDTH / 2));
+      int map_x = (int)(world_pos.x - (ISO_TILE_WIDTH / 2));
       int map_y = (int)world_pos.y;
 
       // Draw tiles
@@ -277,10 +275,6 @@ static void load_st_sprites(Map *map) {
 static void map_gen_st_objs(Map *map, int st_count) {
   if (!map) return;
 
-  // Offsets to match map rendering
-  int offset_x = map->height * (ISO_TILE_WIDTH / 2);
-  int offset_y = map->height * (ISO_TILE_HEIGHT / 2);
-
   // Margin in pixels for largest sprite
   int margin_px = 80;
 
@@ -297,22 +291,18 @@ static void map_gen_st_objs(Map *map, int st_count) {
     int range_x = map->width_pix - margin_px * 2;
     int range_y = map->height_pix - margin_px * 2;
 
-    int world_x = (hash_u32(attempt, 0) % range_x) + margin_px - offset_x;
-    int world_y = (hash_u32(attempt, 1) % range_y) + margin_px - offset_y;
+    int world_x = (hash_u32(attempt, 0) % range_x) + margin_px;
+    int world_y = (hash_u32(attempt, 1) % range_y) + margin_px;
 
     // Check if sprite corners are within map pixel bounds
-    int map_x = world_x + offset_x;
-    int map_y = world_y + offset_y;
-
-    // Check all 4 corners of the sprite
-    if (map_x < 0 || map_x + sprite->width >= map->width_pix || map_y < 0 ||
-        map_y + sprite->height >= map->height_pix) {
+    if (world_x < 0 || world_x + sprite->width >= map->width_pix || world_y < 0 ||
+        world_y + sprite->height >= map->height_pix) {
       continue;
     }
 
     // Check that the pixel at this position is not transparent (inside diamond)
-    int center_x = map_x + sprite->width / 2;
-    int center_y = map_y + sprite->height;
+    int center_x = world_x + sprite->width / 2;
+    int center_y = world_y + sprite->height;
 
     if (center_x >= 0 && center_x < map->width_pix && center_y >= 0 && center_y < map->height_pix) {
       uint32_t pixel = map->pixels[center_y * map->width_pix + center_x];
