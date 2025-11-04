@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Compare two game objects by their depth (y-coordinate + height)
 int compare_objs_by_depth(const void *a, const void *b) {
   const GameObject *obj_a = *(const GameObject **)a;
   const GameObject *obj_b = *(const GameObject **)b;
@@ -18,6 +19,7 @@ int compare_objs_by_depth(const void *a, const void *b) {
   return (ya > yb) - (ya < yb);
 }
 
+// Render shadow for given object onto framebuffer
 static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *object, Map *map) {
   if (!framebuffer || !object || !object->cur_sprite || !map) return;
 
@@ -73,6 +75,7 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   }
 }
 
+// Render given game object onto framebuffer considering camera position
 void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Map *map) {
   if (!framebuffer || !object || !object->cur_sprite) return;
   Sprite *sprite = object->cur_sprite;
@@ -105,13 +108,19 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera, Ma
 }
 
 // Renders multiple game objects
-// Objects must be sorted by depth! (y-coordinate)
-void render_objects(uint32_t *framebuffer, GameObject **objects, int count, Camera *camera, Map *map) {
+// Objects must be sorted by depth! (y-coordinate and height)
+void render_objects(uint32_t *framebuffer,
+    GameObject **objects,
+    int count,
+    Camera *camera,
+    Map *map) {
   if (!framebuffer || !objects || !camera) return;
 
   for (int i = 0; i < count; i++) { render_object(framebuffer, objects[i], camera, map); }
 }
 
+// Load prerendered map portion into framebuffer based on camera position
+// TODO: optimize camera bounds checking by rectangle intersection, not every pixel
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 

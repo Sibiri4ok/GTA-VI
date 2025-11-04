@@ -19,11 +19,15 @@ typedef struct {
 } Sprite;
 
 typedef struct {
-  Vector position; // World coordinates
-  Sprite *cur_sprite;
+  // Top-left corner in world coordinates
+  // World coordinates center is top-left of the map
+  Vector position;
+  Sprite *cur_sprite; // Current sprite to render
   bool flip_horizontal;
 
-  // Only for dynamic objects
+  // In-moment position change.
+  // Needed only for convenience in movement calculations.
+  // Only for dynamic objects.
   Vector velocity;
 } GameObject;
 
