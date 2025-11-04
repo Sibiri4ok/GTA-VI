@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// Load sprite from file and scale it
 Sprite load_sprite(const char *path, float scale) {
   Sprite sprite = {0};
 

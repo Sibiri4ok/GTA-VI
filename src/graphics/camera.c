@@ -8,9 +8,9 @@ Camera *camera_create(float width, float height) {
   camera->size = (Vector){width, height};
   camera->position = (Vector){0.0f, 0.0f};
   camera->target = (Vector){0.0f, 0.0f};
-  camera->follow_speed = 8.0f;
+  camera->follow_speed = 8.0f; // not used yet
   camera->following = true;
-  camera->world_bounds = (Vector){0.0f, 0.0f};
+  camera->world_bounds = (Vector){0.0f, 0.0f}; // not used yet (and not needed mb?)
 
   return camera;
 }
@@ -19,6 +19,8 @@ void camera_free(Camera *camera) {
   if (camera) { free(camera); }
 }
 
+// Smoothly update camera position to follow target
+// At every call (camera_update), the camera moves a fraction of the distance
 void camera_update(Camera *camera, float delta_time) {
   if (!camera) return;
 
@@ -41,12 +43,14 @@ void camera_update(Camera *camera, float delta_time) {
   }
 }
 
+// Check if a world position is visible in the camera
 bool camera_is_visible(const Camera *camera, Vector pos) {
   if (!camera) return false;
 
   return !(pos.x < 0 || pos.x >= camera->size.x || pos.y < 0 || pos.y >= camera->size.y);
 }
 
+// Convert world coordinates to screen coordinates relative to camera
 Vector camera_world_to_screen(const Camera *camera, Vector world_pos) {
   if (!camera) return world_pos;
 
@@ -56,6 +60,7 @@ Vector camera_world_to_screen(const Camera *camera, Vector world_pos) {
   return screen;
 }
 
+// Convert screen coordinates to world coordinates relative to camera
 Vector camera_screen_to_world(const Camera *camera, Vector screen_pos) {
   if (!camera) return screen_pos;
 
