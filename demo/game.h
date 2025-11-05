@@ -9,7 +9,7 @@
 typedef struct Game {
   DynamicObjects *dyn_objs;
   StaticObjects *st_objs;
-  GameObject **objects;
+  GameObject **objects; // All objects (static + dynamic)
   GameObject *player;
   Engine *engine;
 } Game;
