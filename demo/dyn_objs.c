@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ANIM_FRAME_TIME (1.0f / 20.0f) // in seconds
+#define ANIM_FRAME_TIME (1.0f / 8.0f) // in seconds
 #define MAN_COUNT 5
 #define SHEEPS_COUNT 30
 #define PLAYER_SPEED 3.5f

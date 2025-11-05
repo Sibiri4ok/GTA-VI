@@ -71,6 +71,5 @@ void game_free(Game *game) {
 void game_update(Game *game, Input *input) {
   if (!game || !input) return;
 
-  float delta_time = engine_get_delta_time(game->engine);
-  dyn_objs_update(game->dyn_objs, input, delta_time);
+  dyn_objs_update(game->dyn_objs, input, ENGINE_LOGIC_STEP);
 }
