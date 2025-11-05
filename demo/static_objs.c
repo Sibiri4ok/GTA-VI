@@ -1,3 +1,4 @@
+#include "static_objs.h"
 #include <engine/map.h>
 #include <engine/random.h>
 #include <engine/types.h>
@@ -12,11 +13,11 @@ typedef enum {
   OBJ_TREE,
   OBJ_CACTUS,
   OBJ_PALM,
-  OBJ_MAX
+  OBJ_COUNT
 } ObjectType;
 
-Sprite *load_st_sprites() {
-  Sprite *obj_sprites = calloc(OBJ_MAX, sizeof(Sprite));
+static Sprite *load_st_sprites() {
+  Sprite *obj_sprites = calloc(OBJ_COUNT, sizeof(Sprite));
 
   obj_sprites[OBJ_BUSH1] = load_sprite("assets/bush1.png", 1.5f);
   obj_sprites[OBJ_BUSH2] = load_sprite("assets/bush2.png", 1.5f);
@@ -28,17 +29,16 @@ Sprite *load_st_sprites() {
   return obj_sprites;
 }
 
-GameObject *gen_st_objs(Map *map, int count) {
-  if (!map) return NULL;
+static GameObject *gen_st_objs(Map *map, Sprite *sprites, int count) {
+  if (!map || !sprites) return NULL;
 
   GameObject *objects = NULL;
 
   int margin = 80;
 
-  Sprite *sprites = load_st_sprites();
   while (arrlen(objects) < count) {
     // Random object type (determine first to know sprite size)
-    ObjectType type = rand_big() % OBJ_MAX;
+    ObjectType type = rand_big() % OBJ_COUNT;
     Sprite *sprite = &sprites[type];
 
     if (!sprite->pixels) continue;
@@ -64,10 +64,45 @@ GameObject *gen_st_objs(Map *map, int count) {
     GameObject obj = {0};
     obj.position = (Vector){(float)world.x, (float)world.y};
     obj.cur_sprite = sprite;
-    obj.flip_horizontal = false;
     obj.data = NULL;
     arrpush(objects, obj);
   }
 
   return objects;
+}
+
+StaticObjects *create_static_objs(Map *map, int count) {
+  if (!map) return NULL;
+
+  StaticObjects *st_objs = calloc(1, sizeof(StaticObjects));
+  if (!st_objs) return NULL;
+
+  st_objs->sprites = load_st_sprites();
+  if (!st_objs->sprites) {
+    free(st_objs);
+    return NULL;
+  }
+
+  st_objs->objects = gen_st_objs(map, st_objs->sprites, count);
+  if (!st_objs->objects) {
+    for (int i = 0; i < OBJ_COUNT; i++) { free_sprite(&st_objs->sprites[i]); }
+    free(st_objs->sprites);
+    free(st_objs);
+    return NULL;
+  }
+
+  return st_objs;
+}
+
+void free_static_objs(StaticObjects *st_objs) {
+  if (!st_objs) return;
+
+  if (st_objs->sprites) {
+    for (int i = 0; i < OBJ_COUNT; i++) { free_sprite(&st_objs->sprites[i]); }
+    free(st_objs->sprites);
+  }
+
+  if (st_objs->objects) { arrfree(st_objs->objects); }
+
+  free(st_objs);
 }

@@ -99,7 +99,6 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
   // Fixed timestep: measure frame time
   uint64_t current_time = display_get_ticks();
   float frame_time = (current_time - e->last_frame_time) / 1000.0f;
-  e->last_frame_time = current_time;
 
   // Cap framte time to avoid slowdown game
   if (frame_time > 0.25f) frame_time = 0.25f;
@@ -114,6 +113,8 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
     camera_update(e->camera, FIXED_TIMESTEP);
   }
 
+  // Update frame only after game logic updates!
+  e->last_frame_time = current_time;
   return true;
 }
 
@@ -141,7 +142,7 @@ float engine_get_fps(Engine *e) {
   return e ? display_get_fps(e->display) : 0.0f;
 }
 
-// Get the number of milliseconds since the engine was created
-uint64_t engine_get_time(Engine *e) {
-  return e ? display_get_ticks() : 0;
+// Get delta time from last frame in seconds
+float engine_get_delta_time(Engine *e) {
+  return e ? (display_get_ticks() - e->last_frame_time) / 1000.0f : 0.0f;
 }

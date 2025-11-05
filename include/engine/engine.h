@@ -18,6 +18,6 @@ void engine_render(Engine *e, GameObject **objects, int count);
 void engine_end_frame(Engine *e);
 
 float engine_get_fps(Engine *e);
-uint64_t engine_get_time(Engine *e);
+float engine_get_delta_time(Engine *e);
 
 #endif
