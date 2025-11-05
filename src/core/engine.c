@@ -11,8 +11,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define FIXED_TIMESTEP (1.0f / 60.0f)
-
 struct Engine {
   Display *display;
   Input input;
@@ -106,11 +104,11 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
   e->accumulator += frame_time;
 
   // Update logic at fixed rate (60 times per second)
-  while (e->accumulator >= FIXED_TIMESTEP) {
+  while (e->accumulator >= ENGINE_LOGIC_STEP) {
     update(&e->input, user_data);
-    e->accumulator -= FIXED_TIMESTEP;
+    e->accumulator -= ENGINE_LOGIC_STEP;
     e->camera->target = e->player->position;
-    camera_update(e->camera, FIXED_TIMESTEP);
+    camera_update(e->camera, ENGINE_LOGIC_STEP);
   }
 
   // Update frame only after game logic updates!
