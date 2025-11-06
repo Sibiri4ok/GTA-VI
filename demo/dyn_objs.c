@@ -36,6 +36,7 @@ typedef struct DynamicObjects {
   EntitySprites *sprites;
   GameObject *objects;
   GameObject *player;
+  VectorU32 map_size;
 } DynamicObjects;
 
 // Object animation data
@@ -217,7 +218,10 @@ DynamicObjects *create_dynamic_objects(Map *map) {
   dyn_objs->sprites[TYPE_MAN] = create_man_sprites();
   dyn_objs->sprites[TYPE_SHEEP] = create_sheep_sprites();
 
-  dyn_objs->objects = gen_dyn_objects(dyn_objs, map);
+  // Store map size for boundary checking
+  dyn_objs->map_size = map_get_size(map);
+
+ dyn_objs->objects = gen_dyn_objects(dyn_objs, map);
   dyn_objs->player = &dyn_objs->objects[0]; // first man
 
   return dyn_objs;
@@ -359,8 +363,22 @@ void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
     if (n_dir != data->direction) { data->frame_in_anim = 0; }
     data->state = n_st;
     data->direction = n_dir;
-    obj->position.x += dx;
-    obj->position.y += dy;
+    
+    // Check if this is the player object and apply boundary checking
+    if (obj == dyn_objs->player) {
+        float new_x = obj->position.x + dx;
+        float new_y = obj->position.y + dy;
+        
+        // Update position only if within map bounds
+        if (new_x >= 0 && new_x < dyn_objs->map_size.x && new_y >= 0 && new_y < dyn_objs->map_size.y) {
+            obj->position.x = new_x;
+            obj->position.y = new_y;
+        }
+    } else {
+        // For NPCs, update position normally (or with their own boundary checks if needed)
+        obj->position.x += dx;
+        obj->position.y += dy;
+    }
 
     update_entity_animation(obj);
   }

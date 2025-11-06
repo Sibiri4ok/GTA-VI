@@ -27,14 +27,41 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   int shadow_width = object->cur_sprite->width / 2;
   int shadow_height = shadow_width / 3;
 
-  // Sun from bottom-left to top-right
-  int shadow_offset_x = object->cur_sprite->width / 4;
-  int shadow_offset_y = -object->cur_sprite->height / 6;
+  // Calculate shadow offset based on movement direction (velocity)
+  // The shadow should fall opposite to the movement direction
+  float velocity_length = sqrtf(object->velocity.x * object->velocity.x + object->velocity.y * object->velocity.y);
+  int shadow_offset_x, shadow_offset_y;
+  
+  if (velocity_length > 0.1f) {
+    // Use normalized velocity to determine shadow direction (opposite to movement)
+    float norm_vel_x = -object->velocity.x / velocity_length; // Negative to make shadow fall opposite to movement
+    float norm_vel_y = -object->velocity.y / velocity_length; // Negative to make shadow fall opposite to movement
+    
+    // Scale the shadow offset based on sprite size
+    shadow_offset_x = (int)(norm_vel_x * object->cur_sprite->width / 4);
+    shadow_offset_y = (int)(norm_vel_y * object->cur_sprite->height / 6);
+  } else {
+    // If not moving, use default direction (bottom-right)
+    shadow_offset_x = object->cur_sprite->width / 4;
+    shadow_offset_y = -object->cur_sprite->height / 6;
+  }
 
   // Shadow center in screen coordinates
   Vector obj_screen = camera_world_to_screen(camera, object->position);
-  int center_x = obj_screen.x + object->cur_sprite->width / 2 + shadow_offset_x;
-  int center_y = obj_screen.y + object->cur_sprite->height + shadow_offset_y;
+  
+  // When character is facing forward (showing back), make shadow closer to character
+  int adjusted_shadow_offset_x = shadow_offset_x;
+  int adjusted_shadow_offset_y = shadow_offset_y;
+  
+  // Check if character is likely facing forward (showing back of character) and make shadow closer
+  // When moving up on screen (negative y velocity), character is likely facing forward (showing back)
+  if (object->velocity.y < -0.1f) { // Character is moving up, likely facing forward (showing back)
+      adjusted_shadow_offset_x = (int)(shadow_offset_x * 0.5f);
+      adjusted_shadow_offset_y = (int)(shadow_offset_y * 0.5f);
+ }
+  
+  int center_x = obj_screen.x + object->cur_sprite->width / 2 + adjusted_shadow_offset_x;
+  int center_y = obj_screen.y + object->cur_sprite->height + adjusted_shadow_offset_y;
 
   // Return if shadow is completely off-screen
   int shadow_left = center_x - shadow_width;
