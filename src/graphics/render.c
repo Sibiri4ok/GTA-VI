@@ -3,6 +3,7 @@
 #include "graphics/alpha_blend.h"
 #include "world/map_priv.h"
 #include <engine/coordinates.h>
+#include <engine/types.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,8 +32,8 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   uint32_t shadow_color = 100 << 24;
   float x_shift_scale = 0.4f;
   // do nothing if shadow is out of the screen
-  if (top_left.x + sprite_w + sprite_h * (1.0f + x_shift_scale) < 0.0f ||
-      top_left.x >= camera->size.x || top_left.y + sprite_h < 0 || top_left.y >= camera->size.y) {
+  if (!is_rect_intersect((Rect){top_left, sprite_w + sprite_h * (1.0f + x_shift_scale), sprite_h},
+          (Rect){(Vector){0.0f, 0.0f}, camera->size.x, camera->size.y})) {
     return;
   }
 
@@ -61,10 +62,10 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera) {
   // Render shadow first
   render_shadow(framebuffer, camera, object);
 
-  // Return if object is completely off-screen
   Vector obj_screen = camera_world_to_screen(camera, object->position);
-  if (obj_screen.x + sprite->width < 0 || obj_screen.x >= camera->size.x ||
-      obj_screen.y + sprite->height < 0 || obj_screen.y >= camera->size.y) {
+  // Return if object is completely off-screen
+  if (!is_rect_intersect((Rect){obj_screen, sprite->width, sprite->height},
+          (Rect){(Vector){0.0f, 0.0f}, camera->size.x, camera->size.y})) {
     return;
   }
 
@@ -92,8 +93,7 @@ void render_objects(uint32_t *framebuffer, GameObject **objects, int count, Came
   for (int i = 0; i < count; i++) { render_object(framebuffer, objects[i], camera); }
 }
 
-// Load prerendered map portion into framebuffer based on camera position
-// TODO: optimize camera bounds checking by rectangle intersection, not every pixel
+// Load prerendered part of the map into framebuffer based on camera position
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 
@@ -107,10 +107,6 @@ void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
       int map_x = map_start_x + screen_x;
       int map_y = map_start_y + screen_y;
 
-      // Skip pixels outside map
-      if (map_x < 0 || map_x >= map->width_pix || map_y < 0 || map_y >= map->height_pix) {
-        continue;
-      }
       int idx = screen_y * (int)camera->size.x + screen_x;
       uint32_t pixel = map->pixels[map_y * map->width_pix + map_x];
       framebuffer[idx] = alpha_blend(pixel, framebuffer[idx]);
