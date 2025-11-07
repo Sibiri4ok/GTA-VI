@@ -23,54 +23,28 @@ int compare_objs_by_depth(const void *a, const void *b) {
 static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *object) {
   if (!framebuffer || !object || !object->cur_sprite) return;
 
-  // Shadow size - simple ellipse
-  int shadow_width = object->cur_sprite->width / 2;
-  int shadow_height = shadow_width / 3;
+  // top-left corner of the object in screen coordinates
+  Vector top_left = camera_world_to_screen(camera, object->position);
 
-  // Sun from bottom-left to top-right
-  int shadow_offset_x = object->cur_sprite->width / 4;
-  int shadow_offset_y = -object->cur_sprite->height / 6;
+  Vector shadow = {1.0f, 1.0f};
+  float shadow_scale = 1.0f;
+  uint32_t shadow_color = 100 << 24;
 
-  // Shadow center in screen coordinates
-  Vector obj_screen = camera_world_to_screen(camera, object->position);
-  int center_x = obj_screen.x + object->cur_sprite->width / 2 + shadow_offset_x;
-  int center_y = obj_screen.y + object->cur_sprite->height + shadow_offset_y;
+  int sprite_w = object->cur_sprite->width;
+  int sprite_h = object->cur_sprite->height;
+  for (int y = 0; y < sprite_h; y++) {
+    for (int x = 0; x < sprite_w; x++) {
+      uint32_t pix = object->cur_sprite->pixels[y * sprite_w + x];
+      if (((pix >> 24) & 0xFF) == 0) continue; // if pixel is transparent (alpha == 0), skip
 
-  // Return if shadow is completely off-screen
-  int shadow_left = center_x - shadow_width;
-  int shadow_right = center_x + shadow_width;
-  int shadow_top = center_y - shadow_height;
-  int shadow_bottom = center_y + shadow_height;
+      float new_x = top_left.x + x + (sprite_h - y) * 0.4f;
+      float new_y = top_left.y + y;
 
-  if (shadow_right < 0 || shadow_left >= camera->size.x || shadow_bottom < 0 ||
-      shadow_top >= camera->size.y) {
-    return;
-  }
+      // Check framebuffer bounds (which is equal to camera bounds)
+      if (!camera_is_visible(camera, (Vector){new_x, new_y})) { continue; }
 
-  for (int y = -shadow_height; y <= shadow_height; y++) {
-    for (int x = -shadow_width; x <= shadow_width; x++) {
-      // Ellipse equation: (x/a)^2 + (y/b)^2 <= 1
-      float nx = (float)x / (float)shadow_width;
-      float ny = (float)y / (float)shadow_height;
-      float dist = nx * nx + ny * ny;
-
-      if (dist <= 1.0f) {
-        // Gradient: darker in center, lighter at edges
-        float alpha_factor = 1.0f - dist;
-        alpha_factor = powf(alpha_factor, 1.5f); // Smooth and saturated falloff
-        uint8_t alpha = (uint8_t)(alpha_factor * 140.0f);
-
-        uint32_t shadow_color = (alpha << 24); // Black with varying alpha
-
-        int screen_x = center_x + x;
-        int screen_y = center_y + y;
-
-        // Check visibility
-        if (camera_is_visible(camera, (Vector){screen_x, screen_y})) {
-          int fb_idx = screen_y * (int)camera->size.x + screen_x;
-          framebuffer[fb_idx] = alpha_blend(shadow_color, framebuffer[fb_idx]);
-        }
-      }
+      uint32_t fb_idx = (uint32_t)new_y * camera->size.x + (uint32_t)new_x;
+      framebuffer[fb_idx] = alpha_blend(shadow_color, framebuffer[fb_idx]);
     }
   }
 }
