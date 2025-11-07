@@ -107,6 +107,11 @@ void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
       int map_x = map_start_x + screen_x;
       int map_y = map_start_y + screen_y;
 
+      // Skip pixels outside map
+      if (map_x < 0 || map_x >= map->width_pix || map_y < 0 || map_y >= map->height_pix) {
+        continue;
+      }
+
       int idx = screen_y * (int)camera->size.x + screen_x;
       uint32_t pixel = map->pixels[map_y * map->width_pix + map_x];
       framebuffer[idx] = alpha_blend(pixel, framebuffer[idx]);
