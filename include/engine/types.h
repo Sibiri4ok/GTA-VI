@@ -47,4 +47,11 @@ Sprite *load_spritesheet_frames(const char *path,
     float scale);
 void free_spritesheet_frames(Sprite *frames, int frame_count);
 
+typedef struct {
+  Vector pos;
+  float w, h;
+} Rect;
+
+bool is_rect_intersect(Rect r1, Rect r2);
+
 #endif

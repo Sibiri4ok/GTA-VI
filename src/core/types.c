@@ -146,3 +146,8 @@ void free_spritesheet_frames(Sprite *frames, int frame_count) {
 
   free(frames);
 }
+
+bool is_rect_intersect(Rect r1, Rect r2) {
+  return !(r1.pos.x > r2.pos.x + r2.w || r1.pos.x + r1.w < r2.pos.x || r1.pos.y > r2.pos.y + r2.h ||
+      r1.pos.y + r1.h < r2.pos.y);
+}
