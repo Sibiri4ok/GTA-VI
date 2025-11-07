@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -O2 -MMD -MP
+CFLAGS = -std=c99 -Wall -Wextra -O3 -MMD -MP
 LDFLAGS = -lSDL2 -lm
 
 SRC_DIR = src
@@ -20,7 +20,7 @@ DEMO_OBJECTS = $(patsubst $(DEMO_DIR)/%.c,$(BUILD_DIR)/$(DEMO_DIR)/%.o,$(DEMO_SO
 DEPS_OBJECTS = $(patsubst $(DEPS_DIR)/%.c,$(BUILD_DIR)/deps/%.o,$(wildcard $(DEPS_DIR)/*.c))
 DEPS = $(LIB_OBJECTS:.o=.d) $(DEMO_OBJECTS:.o=.d)
 
-TARGET = $(BUILD_DIR)/game_engine
+TARGET = $(BUILD_DIR)/demo_game
 TEST_SOURCES = $(shell find $(TEST_DIR) -type f -name '*.c' ! -name 'test_framework.c')
 TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/tests/%.o,$(TEST_SOURCES))
 TEST_FRAMEWORK_OBJ = $(BUILD_DIR)/tests/test_framework.o
