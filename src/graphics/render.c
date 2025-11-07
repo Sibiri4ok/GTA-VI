@@ -28,27 +28,29 @@ static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj
   Vector top_left = camera_world_to_screen(camera, obj->position);
   int sprite_w = obj->cur_sprite->width;
   int sprite_h = obj->cur_sprite->height;
+  int32_t cam_w = (uint32_t)camera->size.x;
+  int32_t cam_h = (uint32_t)camera->size.y;
 
   uint32_t shadow_color = 100 << 24;
   float x_shift_scale = 0.4f;
   // do nothing if shadow is out of the screen
   if (!is_rect_intersect((Rect){top_left, sprite_w + sprite_h * (1.0f + x_shift_scale), sprite_h},
-          (Rect){(Vector){0.0f, 0.0f}, camera->size.x, camera->size.y})) {
+          (Rect){(Vector){0.0f, 0.0f}, cam_w, cam_h})) {
     return;
   }
 
   for (int y = 0; y < sprite_h; y++) {
+    float x_shift = (sprite_h - y) * x_shift_scale;
+    int32_t shad_y = top_left.y + y;
+    if (shad_y < 0 || shad_y >= cam_h) { continue; }
+
     for (int x = 0; x < sprite_w; x++) {
+      int32_t shad_x = top_left.x + x + x_shift;
+      if (shad_x < 0 || shad_x >= cam_w) { continue; }
+
       uint32_t pix = obj->cur_sprite->pixels[y * sprite_w + x];
       if (((pix >> 24) & 0xFF) == 0) continue; // if pixel is transparent (alpha == 0), skip
-
-      float new_x = top_left.x + x + (sprite_h - y) * x_shift_scale;
-      float new_y = top_left.y + y;
-
-      // Check framebuffer bounds (which is equal to camera bounds)
-      if (!camera_is_visible(camera, (Vector){new_x, new_y})) { continue; }
-
-      uint32_t fb_idx = (uint32_t)new_y * camera->size.x + (uint32_t)new_x;
+      uint32_t fb_idx = shad_y * cam_w + shad_x;
       framebuffer[fb_idx] = alpha_blend(shadow_color, framebuffer[fb_idx]);
     }
   }
@@ -70,12 +72,12 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera) {
   }
 
   for (int sy = 0; sy < sprite->height; sy++) {
+    int screen_y = obj_screen.y + sy;
+    if (screen_y < 0 || screen_y >= camera->size.y) { continue; }
+
     for (int sx = 0; sx < sprite->width; sx++) {
-
       int screen_x = obj_screen.x + sx;
-      int screen_y = obj_screen.y + sy;
-
-      if (!camera_is_visible(camera, (Vector){screen_x, screen_y})) { continue; }
+      if (screen_x < 0 || screen_x >= camera->size.x) { continue; }
 
       uint32_t src = sprite->pixels[sy * sprite->width + sx];
       int fb_idx = screen_y * camera->size.x + screen_x;
@@ -103,14 +105,12 @@ void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
 
   // Render visible part of the map
   for (int screen_y = 0; screen_y < camera->size.y; screen_y++) {
+    int map_y = map_start_y + screen_y;
+    if (map_y < 0 || map_y >= map->height_pix) { continue; }
+
     for (int screen_x = 0; screen_x < camera->size.x; screen_x++) {
       int map_x = map_start_x + screen_x;
-      int map_y = map_start_y + screen_y;
-
-      // Skip pixels outside map
-      if (map_x < 0 || map_x >= map->width_pix || map_y < 0 || map_y >= map->height_pix) {
-        continue;
-      }
+      if (map_x < 0 || map_x >= map->width_pix) { continue; }
 
       int idx = screen_y * (int)camera->size.x + screen_x;
       uint32_t pixel = map->pixels[map_y * map->width_pix + map_x];
