@@ -20,24 +20,28 @@ int compare_objs_by_depth(const void *a, const void *b) {
 }
 
 // Render shadow for given object onto framebuffer
-static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *object) {
-  if (!framebuffer || !object || !object->cur_sprite) return;
+static void render_shadow(uint32_t *framebuffer, Camera *camera, GameObject *obj) {
+  if (!framebuffer || !obj || !obj->cur_sprite) return;
 
   // top-left corner of the object in screen coordinates
-  Vector top_left = camera_world_to_screen(camera, object->position);
+  Vector top_left = camera_world_to_screen(camera, obj->position);
+  int sprite_w = obj->cur_sprite->width;
+  int sprite_h = obj->cur_sprite->height;
 
-  Vector shadow = {1.0f, 1.0f};
-  float shadow_scale = 1.0f;
   uint32_t shadow_color = 100 << 24;
+  float x_shift_scale = 0.4f;
+  // do nothing if shadow is out of the screen
+  if (top_left.x + sprite_w + sprite_h * (1.0f + x_shift_scale) < 0.0f ||
+      top_left.x >= camera->size.x || top_left.y + sprite_h < 0 || top_left.y >= camera->size.y) {
+    return;
+  }
 
-  int sprite_w = object->cur_sprite->width;
-  int sprite_h = object->cur_sprite->height;
   for (int y = 0; y < sprite_h; y++) {
     for (int x = 0; x < sprite_w; x++) {
-      uint32_t pix = object->cur_sprite->pixels[y * sprite_w + x];
+      uint32_t pix = obj->cur_sprite->pixels[y * sprite_w + x];
       if (((pix >> 24) & 0xFF) == 0) continue; // if pixel is transparent (alpha == 0), skip
 
-      float new_x = top_left.x + x + (sprite_h - y) * 0.4f;
+      float new_x = top_left.x + x + (sprite_h - y) * x_shift_scale;
       float new_y = top_left.y + y;
 
       // Check framebuffer bounds (which is equal to camera bounds)
@@ -54,15 +58,15 @@ void render_object(uint32_t *framebuffer, GameObject *object, Camera *camera) {
   if (!framebuffer || !object || !object->cur_sprite) return;
   Sprite *sprite = object->cur_sprite;
 
+  // Render shadow first
+  render_shadow(framebuffer, camera, object);
+
   // Return if object is completely off-screen
   Vector obj_screen = camera_world_to_screen(camera, object->position);
   if (obj_screen.x + sprite->width < 0 || obj_screen.x >= camera->size.x ||
       obj_screen.y + sprite->height < 0 || obj_screen.y >= camera->size.y) {
     return;
   }
-
-  // Render shadow first
-  render_shadow(framebuffer, camera, object);
 
   for (int sy = 0; sy < sprite->height; sy++) {
     for (int sx = 0; sx < sprite->width; sx++) {
