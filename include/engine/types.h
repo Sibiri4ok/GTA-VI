@@ -27,10 +27,9 @@ typedef struct {
   // Pointer on a custom user data
   void *data;
   // In-moment position change.
-  // Needed only for convenience in movement calculations.
+  // Need only for convenience in movement calculations.
   // Doesn't used by engine, only by user.
-  // Only for dynamic objects (you can determine which is which by yourself).
-  Vector velocity;
+  Vector pos_delta;
 } GameObject;
 
 Sprite load_sprite(const char *path, float scale);

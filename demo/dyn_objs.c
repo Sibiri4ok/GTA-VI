@@ -165,7 +165,7 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
     data->timer = 0.0f;
 
     man.data = data;
-    man.velocity = (Vector){0, 0};
+    man.pos_delta = (Vector){0, 0};
 
     // Set initial sprite
     man.cur_sprite = &dyn_objs->sprites[TYPE_MAN]
@@ -191,7 +191,7 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
     data->timer = 0.0f;
 
     sheep.data = data;
-    sheep.velocity = (Vector){0, 0};
+    sheep.pos_delta = (Vector){0, 0};
 
     // Set initial sprite
     sheep.cur_sprite =
@@ -261,14 +261,14 @@ static void player_update_velocity(Input *input, GameObject *player) {
     ay /= len;
   }
 
-  // Update velocity
-  player->velocity.x = ax * PLAYER_SPEED;
-  player->velocity.y = ay * PLAYER_SPEED;
+  // Update position change
+  player->pos_delta.x = ax * PLAYER_SPEED;
+  player->pos_delta.y = ay * PLAYER_SPEED;
 }
 
 // Just some random movements for npc
 static void npc_update_velocity(GameObject *npc) {
-  Vector oldv = npc->velocity;
+  Vector oldv = npc->pos_delta;
   float spd = sqrtf(oldv.x * oldv.x + oldv.y * oldv.y);
   float moving = spd >= 0.1f; // 1 if moving, 0 if standing
 
@@ -284,7 +284,7 @@ static void npc_update_velocity(GameObject *npc) {
   newv.x += (1 - moving) * (1 - keep) * rand_dir.x;
   newv.y += (1 - moving) * (1 - keep) * rand_dir.y;
 
-  npc->velocity = newv;
+  npc->pos_delta = newv;
 }
 
 // Npc runs away from player when too close
@@ -294,11 +294,11 @@ static void npc_run_away(GameObject *player, GameObject *npc) {
   float dist = sqrtf(dx * dx + dy * dy);
   if (dist < 100.0f) {
     if (dist < 1.0f) { dist = 1.0f; }
-    npc->velocity.x = -(dx / dist) * 2.0f;
-    npc->velocity.y = -(dy / dist) * 2.0f;
+    npc->pos_delta.x = -(dx / dist) * 2.0f;
+    npc->pos_delta.y = -(dy / dist) * 2.0f;
   } else {
-    npc->velocity.x = 0.0f;
-    npc->velocity.y = 0.0f;
+    npc->pos_delta.x = 0.0f;
+    npc->pos_delta.y = 0.0f;
   }
 }
 
@@ -339,8 +339,8 @@ void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
       npc_update_velocity(obj);
     }
 
-    float dx = obj->velocity.x;
-    float dy = obj->velocity.y;
+    float dx = obj->pos_delta.x;
+    float dy = obj->pos_delta.y;
     bool moving = fabs(dx) + fabs(dy) > 0.1f;
     AnimState n_st = moving ? ANIM_WALK : ANIM_IDLE;
     Direction n_dir = data->direction;
