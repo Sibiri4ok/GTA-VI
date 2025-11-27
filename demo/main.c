@@ -17,7 +17,7 @@ int main(void) {
   if (!game) { return 1; }
   Engine *engine = game->engine;
   while (engine_begin_frame(engine, update, game)) {
-    engine_render(engine, game->objects, arrlen(game->objects));
+    engine_render(engine, &game->batch);
     printf("FPS: %d\n", (int)engine_get_fps(engine));
     engine_end_frame(engine);
   }

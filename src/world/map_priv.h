@@ -6,15 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum {
-  TILE_EMPTY = 0,
-  TILE_GROUND,
-  TILE_WATER,
-  TILE_SAND,
-  TILE_ROCK,
-  TILE_GRASS,
-  TILE_MAX
-} TileType;
+typedef enum { TILE_EMPTY = 0, TILE_GROUND, TILE_WATER, TILE_SAND, TILE_ROCK, TILE_GRASS, TILE_MAX } TileType;
 
 typedef struct Map {
   int width, height;

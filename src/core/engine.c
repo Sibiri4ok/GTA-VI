@@ -117,8 +117,8 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
 }
 
 // Render given objects on screen, sorting by depth
-void engine_render(Engine *e, GameObject **objects, int count) {
-  if (!e || !objects || count <= 0) return;
+void engine_render(Engine *e, RenderBatch *batch) {
+  if (!e || !batch) return;
 
   // Fill background
   uint32_t bg_color = 0xFF87CEEB;
@@ -126,9 +126,8 @@ void engine_render(Engine *e, GameObject **objects, int count) {
 
   load_prerendered(e->pixels, e->map, e->camera);
 
-  // Sort objects by depth
-  qsort(objects, count, sizeof(GameObject *), compare_objs_by_depth);
-  render_objects(e->pixels, objects, count, e->camera);
+  // Render objects and UI
+  render_batch(e->pixels, batch, e->camera);
 }
 
 void engine_end_frame(Engine *e) {

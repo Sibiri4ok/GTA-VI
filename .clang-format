@@ -1,6 +1,6 @@
 BasedOnStyle: LLVM
 UseTab: Never
-ColumnLimit: 100
+ColumnLimit: 110
 PointerAlignment: Right
 AllowShortIfStatementsOnASingleLine: true
 

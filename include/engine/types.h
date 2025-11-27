@@ -32,6 +32,33 @@ typedef struct {
   Vector pos_delta;
 } GameObject;
 
+typedef enum { UI_POS_SCREEN, UI_POS_ATTACHED } UIPositionMode;
+
+typedef struct {
+  // Position mode: either screen position or attached to object with offset
+  UIPositionMode mode;
+  // UI Element position: either screen position or attached object with offset
+  union {
+    Vector screen;
+
+    struct {
+      GameObject *object;
+      Vector offset;
+    } attached;
+  } position;
+
+  Sprite *sprite; // UI Element sprite
+  int z_index;    // layer index for rendering order
+} UIElement;
+
+typedef struct {
+  GameObject **objs;
+  uint32_t obj_count;
+
+  UIElement **uis;
+  uint32_t ui_count;
+} RenderBatch;
+
 Sprite load_sprite(const char *path, float scale);
 void free_sprite(Sprite *sprite);
 
@@ -39,11 +66,8 @@ void free_sprite(Sprite *sprite);
 // Returns array of Sprite (frame_count elements).
 // Frames are read left-to-right, top-to-bottom.
 // Scale is applied to each frame.
-Sprite *load_spritesheet_frames(const char *path,
-    int frame_width,
-    int frame_height,
-    int frame_count,
-    float scale);
+Sprite *
+load_spritesheet_frames(const char *path, int frame_width, int frame_height, int frame_count, float scale);
 void free_spritesheet_frames(Sprite *frames, int frame_count);
 
 typedef struct {

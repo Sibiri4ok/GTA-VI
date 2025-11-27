@@ -18,7 +18,7 @@ void engine_set_map(Engine *e, Map *map);
 void engine_free(Engine *e);
 
 bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data), void *user_data);
-void engine_render(Engine *e, GameObject **objects, int count);
+void engine_render(Engine *e, RenderBatch *batch);
 void engine_end_frame(Engine *e);
 
 // Get current FPS. Calculation based on a last frame time.
