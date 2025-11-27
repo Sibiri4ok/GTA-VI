@@ -9,7 +9,8 @@
 typedef struct Game {
   DynamicObjects *dyn_objs;
   StaticObjects *st_objs;
-  GameObject **objects; // All objects (static + dynamic)
+  UIElement *uis;
+  RenderBatch batch; // All objects and UI elements to render
   GameObject *player;
   Engine *engine;
 } Game;

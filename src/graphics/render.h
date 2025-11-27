@@ -7,8 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-int compare_objs_by_depth(const void *a, const void *b);
-void render_objects(uint32_t *framebuffer, GameObject **objects, int count, Camera *camera);
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera);
+void render_batch(uint32_t *framebuffer, RenderBatch *batch, Camera *camera);
 
 #endif
