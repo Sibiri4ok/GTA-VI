@@ -168,8 +168,8 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
     man.pos_delta = (Vector){0, 0};
 
     // Set initial sprite
-    man.cur_sprite = &dyn_objs->sprites[TYPE_MAN]
-                          .all_frames[dyn_objs->sprites[TYPE_MAN].clips[ANIM_IDLE][DIR_BACK].start];
+    man.cur_sprite =
+        &dyn_objs->sprites[TYPE_MAN].all_frames[dyn_objs->sprites[TYPE_MAN].clips[ANIM_IDLE][DIR_BACK].start];
 
     arrpush(objects, man);
   }
@@ -194,9 +194,8 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
     sheep.pos_delta = (Vector){0, 0};
 
     // Set initial sprite
-    sheep.cur_sprite =
-        &dyn_objs->sprites[TYPE_SHEEP]
-             .all_frames[dyn_objs->sprites[TYPE_SHEEP].clips[ANIM_IDLE][DIR_BACK].start];
+    sheep.cur_sprite = &dyn_objs->sprites[TYPE_SHEEP]
+                            .all_frames[dyn_objs->sprites[TYPE_SHEEP].clips[ANIM_IDLE][DIR_BACK].start];
 
     arrpush(objects, sheep);
   }
