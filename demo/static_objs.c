@@ -6,15 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-typedef enum {
-  OBJ_BUSH1 = 0,
-  OBJ_BUSH2,
-  OBJ_BUSH3,
-  OBJ_TREE,
-  OBJ_CACTUS,
-  OBJ_PALM,
-  OBJ_COUNT
-} ObjectType;
+typedef enum { OBJ_BUSH1 = 0, OBJ_BUSH2, OBJ_BUSH3, OBJ_TREE, OBJ_CACTUS, OBJ_PALM, OBJ_COUNT } ObjectType;
 
 static Sprite *load_st_sprites() {
   Sprite *obj_sprites = calloc(OBJ_COUNT, sizeof(Sprite));
@@ -46,9 +38,7 @@ static GameObject *gen_st_objs(Map *map, Sprite *sprites, int count) {
     VectorU32 world = map_gen_random_position(map, margin);
     VectorU32 map_size = map_get_size(map);
     // Check if sprite corners are within map pixel bounds
-    if (world.x + sprite->width >= map_size.x || world.y + sprite->height >= map_size.y) {
-      continue;
-    }
+    if (world.x + sprite->width >= map_size.x || world.y + sprite->height >= map_size.y) { continue; }
 
     // Check that the pixel at this position is not transparent (inside diamond)
     uint32_t center_x = (uint32_t)(world.x + sprite->width / 2);
@@ -84,12 +74,6 @@ StaticObjects *create_static_objs(Map *map, int count) {
   }
 
   st_objs->objects = gen_st_objs(map, st_objs->sprites, count);
-  if (!st_objs->objects) {
-    for (int i = 0; i < OBJ_COUNT; i++) { free_sprite(&st_objs->sprites[i]); }
-    free(st_objs->sprites);
-    free(st_objs);
-    return NULL;
-  }
 
   return st_objs;
 }
