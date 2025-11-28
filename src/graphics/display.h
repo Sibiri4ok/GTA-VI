@@ -13,7 +13,9 @@ void display_free(Display *d);
 bool display_poll_events(Input *input);
 void display_present(Display *d, const uint32_t *pixels);
 
-float display_get_fps(Display *d);
-uint64_t display_get_ticks(void);
+uint64_t display_get_delta_time(Display *d);
+uint64_t display_get_last_frame_time(Display *d);
+
+uint64_t display_get_ticks();
 
 #endif

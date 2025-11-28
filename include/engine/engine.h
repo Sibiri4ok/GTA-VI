@@ -21,9 +21,9 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
 void engine_render(Engine *e, RenderBatch *batch);
 void engine_end_frame(Engine *e);
 
-// Get current FPS. Calculation based on a last frame time.
+// Get current FPS. Calculation based on the EMA (Exponential Moving Average) formula.
 float engine_get_fps(Engine *e);
-// Time from last frame in seconds.
-float engine_get_delta_time(Engine *e);
+// Time between last two displayed frames in milliseconds.
+uint64_t engine_get_delta_time(Engine *e);
 
 #endif
