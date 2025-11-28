@@ -11,8 +11,8 @@ struct Display {
   SDL_Texture *texture;
   int width;
   int height;
-  uint32_t last_frame_time;
-  float fps;
+  uint64_t last_frame_time;
+  uint64_t delta_time;
 };
 
 Display *display_create(int width, int height, float scale, const char *title) {
@@ -29,8 +29,8 @@ Display *display_create(int width, int height, float scale, const char *title) {
 
   d->width = width;
   d->height = height;
-  d->last_frame_time = SDL_GetTicks();
-  d->fps = 0.0f;
+  d->last_frame_time = SDL_GetTicks64();
+  d->delta_time = 0.0f;
 
   d->window = SDL_CreateWindow(title,
       SDL_WINDOWPOS_CENTERED,
@@ -54,11 +54,8 @@ Display *display_create(int width, int height, float scale, const char *title) {
     return NULL;
   }
 
-  d->texture = SDL_CreateTexture(d->renderer,
-      SDL_PIXELFORMAT_ARGB8888,
-      SDL_TEXTUREACCESS_STREAMING,
-      width,
-      height);
+  d->texture =
+      SDL_CreateTexture(d->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
   if (!d->texture) {
     fprintf(stderr, "SDL_CreateTexture Error: %s\n", SDL_GetError());
     SDL_DestroyRenderer(d->renderer);
@@ -121,9 +118,9 @@ void display_present(Display *d, const uint32_t *pixels) {
   if (!d || !pixels) return;
 
   // Update FPS
-  uint32_t current_time = SDL_GetTicks();
-  uint32_t elapsed = current_time - d->last_frame_time;
-  if (elapsed > 0) { d->fps = 1000.0f / (float)elapsed; }
+  uint64_t current_time = SDL_GetTicks64();
+  uint64_t elapsed = current_time - d->last_frame_time;
+  if (elapsed > 0) { d->delta_time = elapsed; }
   d->last_frame_time = current_time;
 
   // pixels (RAM) -> texture (VRAM)
@@ -136,8 +133,14 @@ void display_present(Display *d, const uint32_t *pixels) {
   SDL_RenderPresent(d->renderer);
 }
 
-float display_get_fps(Display *d) {
-  return d ? d->fps : 0.0f;
+// Time betweet last two frames in milliseconds
+uint64_t display_get_delta_time(Display *d) {
+  return d ? d->delta_time : 0.0f;
+}
+
+// Time of last displayed frame in milliseconds
+uint64_t display_get_last_frame_time(Display *d) {
+  return d ? d->last_frame_time : 0.0f;
 }
 
 uint64_t display_get_ticks() {
