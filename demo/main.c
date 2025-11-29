@@ -25,7 +25,7 @@ int main(void) {
     snprintf(fps, sizeof(fps), "FPS: %d", (int)engine_get_fps(engine));
     snprintf(coords,
         sizeof(coords),
-        "Сoords: (%d, %d)",
+        "Coords: (%d, %d)",
         (int)game->player->position.x,
         (int)game->player->position.y);
     free_sprite(game->uis[1].sprite);

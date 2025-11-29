@@ -14,6 +14,7 @@ typedef struct Game {
   GameObject *player;
   TTF_Font **fonts;
 
+  Map *map;
   Engine *engine;
 } Game;
 
