@@ -117,7 +117,7 @@ bool display_poll_events(Input *input) {
     case SDL_QUIT: input->quit = true; return false;
 
     case SDL_KEYDOWN:
-      if (event.key.repeat) break; // ignore key repeat evenets
+      if (event.key.repeat) break; // ignore key repeat events
       switch (event.key.keysym.scancode) {
       case SDL_SCANCODE_UP: input->up = true; break;
       case SDL_SCANCODE_DOWN: input->down = true; break;

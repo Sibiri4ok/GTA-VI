@@ -38,10 +38,10 @@ Game *game_create() {
   Map *map = map_create(MAP_WIDTH, MAP_HEIGHT, ti);
   if (!map) {
     game_free(game);
-    map_free(map);
     return NULL;
   };
   engine_set_map(engine, map);
+  game->map = map; // Game creates map, so we have ownership
 
   DynamicObjects *dyn_objs = create_dynamic_objects(map);
   StaticObjects *st_objs = create_static_objs(map, STATIC_OBJ_COUNT);
@@ -49,7 +49,6 @@ Game *game_create() {
   game->dyn_objs = dyn_objs;
   if (!dyn_objs || !st_objs) {
     game_free(game);
-    map_free(map);
     return NULL;
   }
 
@@ -66,7 +65,10 @@ Game *game_create() {
   }
   game->fonts = NULL;
   arrpush(game->fonts, TTF_OpenFont("fonts/DejaVuSans.ttf", 20));
-  if (!game->fonts[0]) { return NULL; }
+  if (!game->fonts[0]) {
+    game_free(game);
+    return NULL;
+  }
 
   // Add UI elements: 0 - HP bar, 1 - FPS counter, 2 - world coordinates.
   game->uis = NULL;
@@ -110,6 +112,7 @@ void game_free(Game *game) {
     arrfree(game->fonts);
     TTF_Quit();
   }
+  if (game->map) map_free(game->map);
   free(game);
 }
 
@@ -148,7 +151,7 @@ static UIElement coords_ui(Game *game) {
   ui.position.screen = (Vector){10.0f, 30.0f};
   ui.z_index = 2;
   Sprite *sprite = malloc(sizeof(Sprite));
-  *sprite = text_sprite("World cords: not initialized", game->fonts[0], (SDL_Color){255, 255, 255, 255});
+  *sprite = text_sprite("Coords: not initialized", game->fonts[0], (SDL_Color){255, 255, 255, 255});
   ui.sprite = sprite;
   return ui;
 }
