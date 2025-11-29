@@ -3,7 +3,12 @@
 
 #include <engine/types.h>
 
-Vector iso_world_to_tile(Vector world_pos, int map_height);
-Vector iso_tile_to_world(int x, int y, int map_height);
+// Convert isometric tile coordinates to world coordinates
+// Accepts isometric x, y tile coordinates and map height (in tiles)
+Vector tile_to_world(int x, int y, int map_height);
+
+// Convert world coordinates to isometric tile coordinates
+// Accepts world position and map height (in tiles)
+Vector world_to_tile(float x, float y, int map_height);
 
 #endif

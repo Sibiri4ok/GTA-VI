@@ -14,8 +14,8 @@ typedef struct {
 
 typedef struct {
   uint32_t *pixels;
-  int width;
-  int height;
+  uint32_t width;
+  uint32_t height;
 } Sprite;
 
 typedef struct {
