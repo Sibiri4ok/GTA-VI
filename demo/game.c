@@ -8,8 +8,8 @@
 #include <stb_ds.h>
 #include <stdlib.h>
 
-#define MAP_WIDTH 50
-#define MAP_HEIGHT 50
+#define MAP_WIDTH 25
+#define MAP_HEIGHT 25
 #define STATIC_OBJ_COUNT 200
 
 void game_free(Game *game);
@@ -26,7 +26,13 @@ Game *game_create() {
     return NULL;
   }
 
-  Map *map = map_create(MAP_WIDTH, MAP_HEIGHT);
+  TilesInfo ti = {0};
+  ti.tile_sprites = calloc(1, sizeof(Sprite));
+  ti.tile_sprites[0] = load_sprite("assets/grass_high.png", 1.0f / 7.2f);
+  ti.sprite_count = 1;
+  ti.tiles = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint32_t));
+  ti.sides_height = 64;
+  Map *map = map_create(MAP_WIDTH, MAP_HEIGHT, ti);
   if (!map) {
     game_free(game);
     map_free(map);
