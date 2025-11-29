@@ -12,15 +12,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static bool map_is_valid_position(const Map *map, int x, int y);
-static TileType map_get_tile(const Map *map, int x, int y);
+static bool map_is_valid_position(const Map *map, uint32_t x, uint32_t y);
+static TileType map_get_tile(const Map *map, uint32_t x, uint32_t y);
 static void map_render_tiles(Map *map);
 static void map_gen_tiles(Map *map);
 static Sprite gen_tile(Color base, TileType type);
 
-// Create map. Tiles are generated inside map_create
-// Pre-render tiles into buffer
-Map *map_create(int width, int height) {
+// Create map with given tile width and height.
+//
+// Tiles are generated inside map_create. Pre-render tiles into buffer.
+Map *map_create(uint32_t width, uint32_t height) {
   Map *map = (Map *)calloc(1, sizeof(Map));
   if (!map) { return NULL; }
 
@@ -43,7 +44,7 @@ Map *map_create(int width, int height) {
     return NULL;
   }
 
-  for (int i = 0; i < width * height; i++) { map->tiles[i] = TILE_GRASS; }
+  for (uint32_t i = 0; i < width * height; i++) { map->tiles[i] = TILE_GRASS; }
 
   map_gen_tiles(map);
   map_render_tiles(map);
@@ -60,7 +61,6 @@ void map_free(Map *map) {
   free(map);
 }
 
-// Returns map size in pixels
 VectorU32 map_get_size(const Map *map) {
   VectorU32 size = {0, 0};
   if (!map) return size;
@@ -70,20 +70,12 @@ VectorU32 map_get_size(const Map *map) {
   return size;
 }
 
-// Returns pixel color at given map pixel coordinates
-// If coordinates are out of bounds, returns 0
-uint32_t map_get_pixel(const Map *map, int x, int y) {
-  if (!map || x < 0 || y < 0 || x >= map->width_pix || y >= map->height_pix) return 0;
-
-  return map->pixels[y * map->width_pix + x];
-}
-
-static bool map_is_valid_position(const Map *map, int x, int y) {
+static bool map_is_valid_position(const Map *map, uint32_t x, uint32_t y) {
   if (!map) return false;
-  return (x >= 0 && x < map->width && y >= 0 && y < map->height);
+  return (x < map->width && y < map->height);
 }
 
-static TileType map_get_tile(const Map *map, int x, int y) {
+static TileType map_get_tile(const Map *map, uint32_t x, uint32_t y) {
   if (!map || !map->tiles) return TILE_EMPTY;
 
   if (map_is_valid_position(map, x, y)) { return map->tiles[y * map->width + x]; }
@@ -94,27 +86,27 @@ static void map_render_tiles(Map *map) {
   if (!map || !map->tiles) return;
 
   // Tile coordinates
-  for (int yy = 0; yy < map->height; yy++) {
-    for (int xx = 0; xx < map->width; xx++) {
+  for (uint32_t yy = 0; yy < map->height; yy++) {
+    for (uint32_t xx = 0; xx < map->width; xx++) {
       TileType tile = map_get_tile(map, xx, yy);
       if (tile == TILE_EMPTY) continue;
 
       Sprite *sprite = &map->tile_sprites[tile];
       if (!sprite->pixels) continue;
 
-      Vector world_pos = iso_tile_to_world(xx, yy, map->height);
+      Vector world_pos = tile_to_world(xx, yy, map->height);
 
-      int map_x = (int)(world_pos.x - (ISO_TILE_WIDTH / 2));
+      int map_x = (int)world_pos.x;
       int map_y = (int)world_pos.y;
 
       // Draw tiles
-      for (int sy = 0; sy < sprite->height; sy++) {
-        for (int sx = 0; sx < sprite->width; sx++) {
-          int px = map_x + sx;
-          int py = map_y + sy;
+      for (uint32_t sy = 0; sy < sprite->height; sy++) {
+        for (uint32_t sx = 0; sx < sprite->width; sx++) {
+          uint32_t px = map_x + sx;
+          uint32_t py = map_y + sy;
 
           // Bounds check
-          if (px < 0 || px >= map->width_pix || py < 0 || py >= map->height_pix) { continue; }
+          if (px >= map->width_pix || py >= map->height_pix) { continue; }
 
           uint32_t src = sprite->pixels[sy * sprite->width + sx];
           int idx = py * map->width_pix + px;
@@ -240,15 +232,64 @@ static Sprite gen_tile(Color base, TileType type) {
   return sprite;
 }
 
-// Generate a random position within the map boundaries, considering a margin
-VectorU32 map_gen_random_position(const Map *map, uint32_t margin) {
-  VectorU32 pos = {0, 0};
-  if (!map) return pos;
+static float triArea(Vector p1, Vector p2, Vector p3) {
+  return fabs((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / 2.0f;
+}
 
-  uint32_t range_x = map->width_pix - margin * 2;
-  uint32_t range_y = map->height_pix - margin * 2;
-  pos.x = (rand_big() % range_x) + margin;
-  pos.y = (rand_big() % range_y) + margin;
+typedef struct {
+  // top, bottom, left, right corners of the quadrangle
+  Vector t, b, l, r;
+} MapCorners;
+
+static MapCorners get_map_corners(const Map *map, uint32_t margin) {
+  MapCorners corners;
+  corners.t = tile_to_world(0, 0, map->height);
+  corners.b = tile_to_world(map->width, map->height, map->height);
+  corners.l = tile_to_world(0, map->height, map->height);
+  corners.r = tile_to_world(map->width, 0, map->height);
+  corners.t.y += margin;
+  corners.b.y -= margin;
+  corners.l.x += margin;
+  corners.r.x -= margin;
+  return corners;
+}
+
+static bool pointInQuadrangle(Vector a, Vector b, Vector c, Vector d, Vector p) {
+  float s1 = triArea(a, b, p);
+  float s2 = triArea(b, c, p);
+  float s3 = triArea(c, d, p);
+  float s4 = triArea(d, a, p);
+
+  float S = triArea(a, b, c) + triArea(a, c, d);
+
+  float sum = s1 + s2 + s3 + s4;
+
+  return fabs(sum - S) < 1e-3;
+}
+
+bool is_point_within_map(const Map *map, VectorU32 pos, uint32_t margin) {
+  MapCorners mc = get_map_corners(map, margin);
+  return pointInQuadrangle(mc.t, mc.r, mc.b, mc.l, (Vector){(float)pos.x, (float)pos.y});
+}
+
+VectorU32 map_gen_random_position(const Map *map, uint32_t margin) {
+  Vector center = tile_to_world(map->width / 2, map->height / 2, map->height);
+  VectorU32 pos = {(uint32_t)center.x, (uint32_t)center.y};
+  if (!map || margin >= (map->width_pix / 2) || margin >= (map->height_pix / 2)) return pos;
+
+  MapCorners mc = get_map_corners(map, margin);
+
+  uint32_t range_x = mc.r.x - mc.l.x;
+  uint32_t range_y = mc.b.y - mc.t.y;
+  for (int i = 0; i < 100; i++) {
+    Vector p = {mc.l.x + (rand_big() % range_x), mc.t.y + (rand_big() % range_y)};
+
+    if (pointInQuadrangle(mc.t, mc.r, mc.b, mc.l, p)) {
+      pos.x = (uint32_t)p.x;
+      pos.y = (uint32_t)p.y;
+      return pos;
+    }
+  }
 
   return pos;
 }

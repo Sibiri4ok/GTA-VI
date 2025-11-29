@@ -2,9 +2,12 @@
 #include <engine/map.h>
 #include <engine/random.h>
 #include <engine/types.h>
+#include <math.h>
 #include <stb_ds.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define hypotenuse(a, b) (sqrtf((a) * (a) + (b) * (b)))
 
 typedef enum { OBJ_BUSH1 = 0, OBJ_BUSH2, OBJ_BUSH3, OBJ_TREE, OBJ_CACTUS, OBJ_PALM, OBJ_COUNT } ObjectType;
 
@@ -26,8 +29,6 @@ static GameObject *gen_st_objs(Map *map, Sprite *sprites, int count) {
 
   GameObject *objects = NULL;
 
-  int margin = 80;
-
   while (arrlen(objects) < count) {
     // Random object type (determine first to know sprite size)
     ObjectType type = rand_big() % OBJ_COUNT;
@@ -35,24 +36,11 @@ static GameObject *gen_st_objs(Map *map, Sprite *sprites, int count) {
 
     if (!sprite->pixels) continue;
 
+    int margin = hypotenuse((float)sprite->width, (float)sprite->height);
     VectorU32 world = map_gen_random_position(map, margin);
-    VectorU32 map_size = map_get_size(map);
-    // Check if sprite corners are within map pixel bounds
-    if (world.x + sprite->width >= map_size.x || world.y + sprite->height >= map_size.y) { continue; }
-
-    // Check that the pixel at this position is not transparent (inside diamond)
-    uint32_t center_x = (uint32_t)(world.x + sprite->width / 2);
-    uint32_t center_y = (uint32_t)(world.y + sprite->height);
-    if (center_x < map_size.x && center_y < map_size.y) {
-      uint32_t pixel = map_get_pixel(map, center_x, center_y);
-      // Check if pixel is not background (has alpha > 0)
-      if ((pixel >> 24) == 0) {
-        continue; // Outside diamond shape
-      }
-    }
 
     GameObject obj = {0};
-    obj.position = (Vector){(float)world.x, (float)world.y};
+    obj.position = (Vector){(float)world.x, (float)world.y - sprite->height / 2};
     obj.cur_sprite = sprite;
     obj.data = NULL;
     arrpush(objects, obj);

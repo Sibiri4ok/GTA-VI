@@ -72,11 +72,11 @@ static void render_sprite(uint32_t *framebuffer, Sprite *sprite, Vector screen_p
     return;
   }
 
-  for (int sy = 0; sy < sprite->height; sy++) {
+  for (uint32_t sy = 0; sy < sprite->height; sy++) {
     int screen_y = screen_pos.y + sy;
     if (screen_y < 0 || screen_y >= camera->size.y) { continue; }
 
-    for (int sx = 0; sx < sprite->width; sx++) {
+    for (uint32_t sx = 0; sx < sprite->width; sx++) {
       int screen_x = screen_pos.x + sx;
       if (screen_x < 0 || screen_x >= camera->size.x) { continue; }
 
@@ -139,13 +139,13 @@ void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   int map_start_y = (int)top_left_world.y;
 
   // Render visible part of the map
-  for (int screen_y = 0; screen_y < camera->size.y; screen_y++) {
-    int map_y = map_start_y + screen_y;
-    if (map_y < 0 || map_y >= map->height_pix) { continue; }
+  for (uint32_t screen_y = 0; screen_y < camera->size.y; screen_y++) {
+    uint32_t map_y = map_start_y + screen_y;
+    if (map_y >= map->height_pix) { continue; }
 
-    for (int screen_x = 0; screen_x < camera->size.x; screen_x++) {
-      int map_x = map_start_x + screen_x;
-      if (map_x < 0 || map_x >= map->width_pix) { continue; }
+    for (uint32_t screen_x = 0; screen_x < camera->size.x; screen_x++) {
+      uint32_t map_x = map_start_x + screen_x;
+      if (map_x >= map->width_pix) { continue; }
 
       int idx = screen_y * (int)camera->size.x + screen_x;
       uint32_t pixel = map->pixels[map_y * map->width_pix + map_x];
