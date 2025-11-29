@@ -266,7 +266,7 @@ static void player_update_pos_delta(Input *input, GameObject *player) {
 }
 
 // Just some random movements for npc
-static void npc_update_velocity(GameObject *npc) {
+static void npc_update_pos_delta(GameObject *npc) {
   Vector oldv = npc->pos_delta;
   float spd = sqrtf(oldv.x * oldv.x + oldv.y * oldv.y);
   float moving = spd >= 0.1f; // 1 if moving, 0 if standing
@@ -335,7 +335,7 @@ void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
     } else if (data->type == TYPE_MAN) {
       npc_run_away(dyn_objs->player, obj);
     } else if (data->type == TYPE_SHEEP) {
-      npc_update_velocity(obj);
+      npc_update_pos_delta(obj);
     }
 
     float dx = obj->pos_delta.x;
