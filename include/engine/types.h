@@ -68,7 +68,8 @@ void free_sprite(Sprite *sprite);
 // Scale is applied to each frame.
 Sprite *
 load_spritesheet_frames(const char *path, int frame_width, int frame_height, int frame_count, float scale);
-void free_spritesheet_frames(Sprite *frames, int frame_count);
+
+void free_sprites(Sprite *frames, int frame_count);
 
 typedef struct {
   Vector pos;

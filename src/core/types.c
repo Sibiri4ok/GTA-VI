@@ -81,11 +81,8 @@ void free_sprite(Sprite *sprite) {
 }
 
 // Load spritesheet and split into individual frames (sprites)
-Sprite *load_spritesheet_frames(const char *path,
-    int frame_width,
-    int frame_height,
-    int frame_count,
-    float scale) {
+Sprite *
+load_spritesheet_frames(const char *path, int frame_width, int frame_height, int frame_count, float scale) {
   if (!path || frame_width <= 0 || frame_height <= 0 || frame_count <= 0) return NULL;
   if (scale <= 0.0f) scale = 1.0f;
 
@@ -117,14 +114,8 @@ Sprite *load_spritesheet_frames(const char *path,
     int region_x = col * frame_width;
     int region_y = row * frame_height;
 
-    frames[i] = load_and_scale_region(data,
-        width,
-        height,
-        region_x,
-        region_y,
-        frame_width,
-        frame_height,
-        scale);
+    frames[i] =
+        load_and_scale_region(data, width, height, region_x, region_y, frame_width, frame_height, scale);
 
     // If allocation failed, clean up and return NULL
     if (!frames[i].pixels && (frame_width > 0 && frame_height > 0)) {
@@ -139,7 +130,7 @@ Sprite *load_spritesheet_frames(const char *path,
   return frames;
 }
 
-void free_spritesheet_frames(Sprite *frames, int frame_count) {
+void free_sprites(Sprite *frames, int frame_count) {
   if (!frames) return;
 
   for (int i = 0; i < frame_count; i++) { free_sprite(&frames[i]); }

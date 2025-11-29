@@ -5,17 +5,26 @@
 
 typedef struct Map Map;
 
-// Create map with given tile width and height.
-Map *map_create(uint32_t width, uint32_t height);
+// Tile information for map creation.
+typedef struct TilesInfo {
+  Sprite *tile_sprites;  // Array of tile sprites
+  uint32_t sprite_count; // Number of tile sprites
+  uint32_t *tiles;       // 2D array (flattened) of tile sprite indices
+  // Height of the tile sides in pixels. Must be correctly set for map size calculations.
+  uint32_t sides_height;
+} TilesInfo;
+
+// Create map with given width and height (in tiles) and tiles info.
+Map *map_create(uint32_t width, uint32_t height, TilesInfo ti);
 void map_free(Map *map);
 
 // Check that given point is within map boundaries, considering a margin.
-bool is_point_within_map(const Map *map, VectorU32 pos, uint32_t margin);
+bool is_point_within_map(Map *map, VectorU32 pos, uint32_t margin);
 
 // Generate a random position within the map boundaries, considering a margin.
-VectorU32 map_gen_random_position(const Map *map, uint32_t margin);
+VectorU32 map_gen_random_position(Map *map, uint32_t margin);
 
 // Returns map size in pixels.
-VectorU32 map_get_size(const Map *map);
+VectorU32 map_get_size(Map *map);
 
 #endif

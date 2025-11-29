@@ -65,13 +65,13 @@ static EntitySprites create_man_sprites() {
   if (!idle) { return sprs; }
   Sprite *walk = load_spritesheet_frames("assets/man_walk.png", 28, 30, walk_count, scale);
   if (!walk) {
-    free_spritesheet_frames(idle, idle_count);
+    free_sprites(idle, idle_count);
     return sprs;
   }
   sprs.all_frames = (Sprite *)calloc(walk_count + idle_count, sizeof(Sprite));
   if (!sprs.all_frames) {
-    free_spritesheet_frames(walk, walk_count);
-    free_spritesheet_frames(idle, idle_count);
+    free_sprites(walk, walk_count);
+    free_sprites(idle, idle_count);
     return (EntitySprites){0};
   }
   memcpy(&sprs.all_frames[0], idle, sizeof(Sprite) * idle_count);
@@ -227,7 +227,7 @@ void free_dyn_objects(DynamicObjects *dyn_objs) {
 
   for (int i = 0; i < TYPE_COUNT; i++) {
     if (dyn_objs->sprites[i].all_frames) {
-      free_spritesheet_frames(dyn_objs->sprites[i].all_frames, dyn_objs->sprites[i].frame_count);
+      free_sprites(dyn_objs->sprites[i].all_frames, dyn_objs->sprites[i].frame_count);
     }
   }
 
