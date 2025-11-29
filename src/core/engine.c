@@ -95,7 +95,6 @@ void engine_free(Engine *e) {
   free(e);
 }
 
-// Begin frame: process input and update logic with fixed timestep
 bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data), void *user_data) {
   if (!e) return false;
 
@@ -122,7 +121,6 @@ bool engine_begin_frame(Engine *e, void (*update)(Input *input, void *user_data)
   return true;
 }
 
-// Render given objects on screen, sorting by depth
 void engine_render(Engine *e, RenderBatch *batch) {
   if (!e || !batch) return;
 

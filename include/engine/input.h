@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+// Currently pressed buttons.
 typedef struct {
   bool up, down, left, right;
   bool q, w, e, r, t, y, u, i, o, p;

@@ -53,6 +53,7 @@ typedef struct {
   int z_index;    // layer index for rendering order
 } UIElement;
 
+// Batch of objects and UI elements to render.
 typedef struct {
   GameObject **objs;
   uint32_t obj_count;
@@ -61,6 +62,7 @@ typedef struct {
   uint32_t ui_count;
 } RenderBatch;
 
+// Load sprite from file and scale it.
 Sprite load_sprite(const char *path, float scale);
 void free_sprite(Sprite *sprite);
 
