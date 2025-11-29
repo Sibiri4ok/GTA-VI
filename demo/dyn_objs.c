@@ -246,7 +246,7 @@ GameObject *dyn_objs_get_objects(DynamicObjects *dyn_objs) {
   return dyn_objs->objects;
 }
 
-static void player_update_velocity(Input *input, GameObject *player) {
+static void player_update_pos_delta(Input *input, GameObject *player) {
   float ax = 0.0f, ay = 0.0f;
   if (input->a) ax -= 1.0f;
   if (input->d) ax += 1.0f;
@@ -331,7 +331,7 @@ void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
     data->timer += delta_time;
 
     if (obj == dyn_objs->player) {
-      player_update_velocity(input, obj);
+      player_update_pos_delta(input, obj);
     } else if (data->type == TYPE_MAN) {
       npc_run_away(dyn_objs->player, obj);
     } else if (data->type == TYPE_SHEEP) {

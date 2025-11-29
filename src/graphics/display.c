@@ -79,39 +79,6 @@ void display_free(Display *d) {
   SDL_Quit();
 }
 
-bool display_poll_events(Input *input) {
-  SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    switch (event.type) {
-    case SDL_QUIT: input->quit = true; return false;
-
-    case SDL_KEYDOWN:
-      if (event.key.repeat) break; // ignore key repeat evenets
-      switch (event.key.keysym.scancode) {
-      case SDL_SCANCODE_W: input->w = true; break;
-      case SDL_SCANCODE_A: input->a = true; break;
-      case SDL_SCANCODE_S: input->s = true; break;
-      case SDL_SCANCODE_D: input->d = true; break;
-      case SDL_SCANCODE_ESCAPE: input->quit = true; break;
-      default: break;
-      }
-      break;
-
-    case SDL_KEYUP:
-      switch (event.key.keysym.scancode) {
-      case SDL_SCANCODE_W: input->w = false; break;
-      case SDL_SCANCODE_A: input->a = false; break;
-      case SDL_SCANCODE_S: input->s = false; break;
-      case SDL_SCANCODE_D: input->d = false; break;
-      case SDL_SCANCODE_ESCAPE: input->quit = false; break;
-      default: break;
-      }
-      break;
-    }
-  }
-  return !input->quit;
-}
-
 void display_present(Display *d, const uint32_t *pixels) {
   if (!d || !pixels) return;
 
@@ -141,4 +108,97 @@ uint64_t display_get_last_frame_time(Display *d) {
 
 uint64_t display_get_ticks() {
   return SDL_GetTicks64();
+}
+
+bool display_poll_events(Input *input) {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    switch (event.type) {
+    case SDL_QUIT: input->quit = true; return false;
+
+    case SDL_KEYDOWN:
+      if (event.key.repeat) break; // ignore key repeat evenets
+      switch (event.key.keysym.scancode) {
+      case SDL_SCANCODE_UP: input->up = true; break;
+      case SDL_SCANCODE_DOWN: input->down = true; break;
+      case SDL_SCANCODE_LEFT: input->left = true; break;
+      case SDL_SCANCODE_RIGHT: input->right = true; break;
+      case SDL_SCANCODE_Q: input->q = true; break;
+      case SDL_SCANCODE_W: input->w = true; break;
+      case SDL_SCANCODE_E: input->e = true; break;
+      case SDL_SCANCODE_R: input->r = true; break;
+      case SDL_SCANCODE_T: input->t = true; break;
+      case SDL_SCANCODE_Y: input->y = true; break;
+      case SDL_SCANCODE_U: input->u = true; break;
+      case SDL_SCANCODE_I: input->i = true; break;
+      case SDL_SCANCODE_O: input->o = true; break;
+      case SDL_SCANCODE_P: input->p = true; break;
+      case SDL_SCANCODE_A: input->a = true; break;
+      case SDL_SCANCODE_S: input->s = true; break;
+      case SDL_SCANCODE_D: input->d = true; break;
+      case SDL_SCANCODE_F: input->f = true; break;
+      case SDL_SCANCODE_G: input->g = true; break;
+      case SDL_SCANCODE_H: input->h = true; break;
+      case SDL_SCANCODE_J: input->j = true; break;
+      case SDL_SCANCODE_K: input->k = true; break;
+      case SDL_SCANCODE_L: input->l = true; break;
+      case SDL_SCANCODE_Z: input->z = true; break;
+      case SDL_SCANCODE_X: input->x = true; break;
+      case SDL_SCANCODE_C: input->c = true; break;
+      case SDL_SCANCODE_V: input->v = true; break;
+      case SDL_SCANCODE_B: input->b = true; break;
+      case SDL_SCANCODE_N: input->n = true; break;
+      case SDL_SCANCODE_M: input->m = true; break;
+      case SDL_SCANCODE_SPACE: input->space = true; break;
+      case SDL_SCANCODE_ESCAPE: input->quit = true; break;
+      case SDL_SCANCODE_LCTRL: input->lctrl = true; break;
+      case SDL_SCANCODE_LSHIFT: input->lshift = true; break;
+      case SDL_SCANCODE_RETURN: input->enter = true; break;
+      default: break;
+      }
+      break;
+
+    case SDL_KEYUP:
+      switch (event.key.keysym.scancode) {
+      case SDL_SCANCODE_UP: input->up = false; break;
+      case SDL_SCANCODE_DOWN: input->down = false; break;
+      case SDL_SCANCODE_LEFT: input->left = false; break;
+      case SDL_SCANCODE_RIGHT: input->right = false; break;
+      case SDL_SCANCODE_Q: input->q = false; break;
+      case SDL_SCANCODE_W: input->w = false; break;
+      case SDL_SCANCODE_E: input->e = false; break;
+      case SDL_SCANCODE_R: input->r = false; break;
+      case SDL_SCANCODE_T: input->t = false; break;
+      case SDL_SCANCODE_Y: input->y = false; break;
+      case SDL_SCANCODE_U: input->u = false; break;
+      case SDL_SCANCODE_I: input->i = false; break;
+      case SDL_SCANCODE_O: input->o = false; break;
+      case SDL_SCANCODE_P: input->p = false; break;
+      case SDL_SCANCODE_A: input->a = false; break;
+      case SDL_SCANCODE_S: input->s = false; break;
+      case SDL_SCANCODE_D: input->d = false; break;
+      case SDL_SCANCODE_F: input->f = false; break;
+      case SDL_SCANCODE_G: input->g = false; break;
+      case SDL_SCANCODE_H: input->h = false; break;
+      case SDL_SCANCODE_J: input->j = false; break;
+      case SDL_SCANCODE_K: input->k = false; break;
+      case SDL_SCANCODE_L: input->l = false; break;
+      case SDL_SCANCODE_Z: input->z = false; break;
+      case SDL_SCANCODE_X: input->x = false; break;
+      case SDL_SCANCODE_C: input->c = false; break;
+      case SDL_SCANCODE_V: input->v = false; break;
+      case SDL_SCANCODE_B: input->b = false; break;
+      case SDL_SCANCODE_N: input->n = false; break;
+      case SDL_SCANCODE_M: input->m = false; break;
+      case SDL_SCANCODE_SPACE: input->space = false; break;
+      case SDL_SCANCODE_ESCAPE: input->quit = false; break;
+      case SDL_SCANCODE_RETURN: input->enter = false; break;
+      case SDL_SCANCODE_LCTRL: input->lctrl = false; break;
+      case SDL_SCANCODE_LSHIFT: input->lshift = false; break;
+      default: break;
+      }
+      break;
+    }
+  }
+  return !input->quit;
 }
