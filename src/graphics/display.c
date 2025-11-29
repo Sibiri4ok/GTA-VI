@@ -79,7 +79,6 @@ void display_free(Display *d) {
   SDL_Quit();
 }
 
-// Poll events and send them to input entity
 bool display_poll_events(Input *input) {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -113,7 +112,6 @@ bool display_poll_events(Input *input) {
   return !input->quit;
 }
 
-// Display the given frame buffer
 void display_present(Display *d, const uint32_t *pixels) {
   if (!d || !pixels) return;
 
@@ -133,14 +131,12 @@ void display_present(Display *d, const uint32_t *pixels) {
   SDL_RenderPresent(d->renderer);
 }
 
-// Time betweet last two frames in milliseconds
 uint64_t display_get_delta_time(Display *d) {
-  return d ? d->delta_time : 0.0f;
+  return d ? d->delta_time : 0;
 }
 
-// Time of last displayed frame in milliseconds
 uint64_t display_get_last_frame_time(Display *d) {
-  return d ? d->last_frame_time : 0.0f;
+  return d ? d->last_frame_time : 0;
 }
 
 uint64_t display_get_ticks() {

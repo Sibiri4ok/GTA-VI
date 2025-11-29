@@ -103,6 +103,7 @@ static UIElement hp_bar(Game *game) {
   bar.mode = UI_POS_ATTACHED;
   bar.position.attached.object = game->player;
   bar.position.attached.offset = (Vector){0, 0};
+  bar.z_index = 0;
   Sprite *sprite = malloc(sizeof(Sprite));
   *sprite = load_sprite("assets/hp_bar.png", 1.0f);
   bar.sprite = sprite;

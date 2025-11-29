@@ -9,7 +9,7 @@
 #include <string.h>
 
 // Compare two game objects by their depth (y-coordinate + height)
-int compare_objs_by_depth(const void *a, const void *b) {
+static int compare_objs_by_depth(const void *a, const void *b) {
   const GameObject *obj_a = *(const GameObject **)a;
   const GameObject *obj_b = *(const GameObject **)b;
 
@@ -21,7 +21,7 @@ int compare_objs_by_depth(const void *a, const void *b) {
 }
 
 // Compare two ui elements by their z-index
-int compare_ui_by_z(const void *a, const void *b) {
+static int compare_ui_by_z(const void *a, const void *b) {
   const UIElement *ui_a = *(const UIElement **)a;
   const UIElement *ui_b = *(const UIElement **)b;
   return (ui_a->z_index > ui_b->z_index) - (ui_a->z_index < ui_b->z_index);
@@ -130,7 +130,6 @@ void render_batch(uint32_t *framebuffer, RenderBatch *batch, Camera *camera) {
   for (uint32_t i = 0; i < batch->ui_count; i++) { render_ui_element(framebuffer, batch->uis[i], camera); }
 }
 
-// Load prerendered part of the map into framebuffer based on camera position
 void load_prerendered(uint32_t *framebuffer, Map *map, Camera *camera) {
   if (!map || !framebuffer || !camera) return;
 

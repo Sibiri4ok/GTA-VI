@@ -27,7 +27,7 @@ typedef struct {
   // Pointer on a custom user data
   void *data;
   // In-moment position change.
-  // Need only for convenience in movement calculations.
+  // Needed only for convenience in movement calculations.
   // Doesn't used by engine, only by user.
   Vector pos_delta;
 } GameObject;
