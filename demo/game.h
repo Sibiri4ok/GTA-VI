@@ -12,6 +12,8 @@ typedef struct Game {
   UIElement *uis;
   RenderBatch batch; // All objects and UI elements to render
   GameObject *player;
+  TTF_Font **fonts;
+
   Engine *engine;
 } Game;
 

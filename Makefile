@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -O3 -MMD -MP
-LDFLAGS = -lSDL2 -lm
+LDFLAGS = -lSDL2 -lSDL2_ttf -lm
 
 SRC_DIR = src
 DEMO_DIR = demo

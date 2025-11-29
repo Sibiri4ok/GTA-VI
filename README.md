@@ -8,7 +8,7 @@ The engine API is in [include](./include) folder.
 ## Requirements
 ```bash
 sudo apt-get update
-sudo apt-get install -y libsdl2-dev libsdl2-image-dev
+sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 ```
 
 ## Build

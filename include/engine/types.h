@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -64,10 +66,14 @@ void free_sprite(Sprite *sprite);
 
 // Load spritesheet and split into individual frames.
 // Returns array of Sprite (frame_count elements).
+//
 // Frames are read left-to-right, top-to-bottom.
 // Scale is applied to each frame.
 Sprite *
 load_spritesheet_frames(const char *path, int frame_width, int frame_height, int frame_count, float scale);
+
+// Create sprite from rendered text using given font and color.
+Sprite text_sprite(const char *text, TTF_Font *font, SDL_Color color);
 
 void free_sprites(Sprite *frames, int frame_count);
 
