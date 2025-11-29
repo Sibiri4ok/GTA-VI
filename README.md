@@ -1,11 +1,12 @@
 # Game engine
 
-There is not much engine API docs yet, but API is pretty compact.
-You can see demo game implementation with animations in [demo game](./demo).
-
 The engine API is in [include](./include) folder.
 
-## Requirements
+You can see demo game implementation with implemented animations and some UI elements in [demo game](./demo).
+
+A bit of documentation in [docs folder](./docs). The rest of the documentation is directly in the [include](./include).
+
+# Requirements
 ```bash
 sudo apt-get update
 sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev

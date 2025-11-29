@@ -61,7 +61,6 @@ static Sprite load_and_scale_region(const unsigned char *data,
   return sprite;
 }
 
-// Load sprite from file and scale it
 Sprite load_sprite(const char *path, float scale) {
   Sprite sprite = {0};
 

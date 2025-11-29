@@ -16,7 +16,6 @@ float rand01(int x, int y) {
 
 static bool random_initialized = false;
 
-// Generates a random 32-bit unsigned integer
 uint32_t rand_big() {
   if (!random_initialized) {
     srand((unsigned int)time(NULL));
