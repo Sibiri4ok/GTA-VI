@@ -15,6 +15,8 @@ typedef struct TilesInfo {
 } TilesInfo;
 
 // Create map with given width and height (in tiles) and tiles info.
+//
+// Ownership of the given TilesInfo is transferred to the map!.
 Map *map_create(uint32_t width, uint32_t height, TilesInfo ti);
 void map_free(Map *map);
 

@@ -20,8 +20,14 @@ static void map_render_tiles(Map *map);
 //
 // Tiles are generated inside map_create. Pre-render tiles into buffer.
 Map *map_create(uint32_t width, uint32_t height, TilesInfo ti) {
+  if (!ti.tile_sprites || !ti.tiles || ti.sprite_count == 0) {
+    if (ti.tiles) { free(ti.tiles); }
+    if (ti.tile_sprites) { free_sprites(ti.tile_sprites, ti.sprite_count); }
+    return NULL;
+  }
+
   Map *map = (Map *)calloc(1, sizeof(Map));
-  if (!map || !ti.tile_sprites || !ti.tiles || ti.sprite_count == 0) {
+  if (!map) {
     free(ti.tiles);
     free_sprites(ti.tile_sprites, ti.sprite_count);
     return NULL;
