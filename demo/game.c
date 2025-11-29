@@ -1,6 +1,7 @@
 #include "game.h"
 #include "dyn_objs.h"
 #include "static_objs.h"
+#include <SDL2/SDL_ttf.h>
 #include <engine/coordinates.h>
 #include <engine/engine.h>
 #include <engine/input.h>
@@ -14,6 +15,8 @@
 
 void game_free(Game *game);
 static UIElement hp_bar(Game *game);
+static UIElement fps_ui(Game *game);
+static UIElement coords_ui(Game *game);
 
 Game *game_create() {
   Game *game = calloc(1, sizeof(Game));
@@ -55,8 +58,21 @@ Game *game_create() {
   game->player = dyn_objs_get_player(dyn_objs);
   engine_set_player(engine, game->player);
 
+  // Load fonts
+  if (TTF_Init() != 0) {
+    fprintf(stderr, "Failed to initialize TTF: %s\n", TTF_GetError());
+    game_free(game);
+    return NULL;
+  }
+  game->fonts = NULL;
+  arrpush(game->fonts, TTF_OpenFont("fonts/DejaVuSans.ttf", 20));
+  if (!game->fonts[0]) { return NULL; }
+
+  // Add UI elements: 0 - HP bar, 1 - FPS counter, 2 - world coordinates.
   game->uis = NULL;
   arrpush(game->uis, hp_bar(game));
+  arrpush(game->uis, fps_ui(game));
+  arrpush(game->uis, coords_ui(game));
 
   // Create render batch
   game->batch = (RenderBatch){0};
@@ -89,6 +105,11 @@ void game_free(Game *game) {
   if (game->batch.objs) arrfree(game->batch.objs);
   if (game->batch.uis) arrfree(game->batch.uis);
   if (game->engine) engine_free(game->engine);
+  if (game->fonts) {
+    for (int i = 0; i < arrlen(game->fonts); i++) { TTF_CloseFont(game->fonts[i]); }
+    arrfree(game->fonts);
+    TTF_Quit();
+  }
   free(game);
 }
 
@@ -108,4 +129,26 @@ static UIElement hp_bar(Game *game) {
   *sprite = load_sprite("assets/hp_bar.png", 1.0f);
   bar.sprite = sprite;
   return bar;
+}
+
+static UIElement fps_ui(Game *game) {
+  UIElement ui = {0};
+  ui.mode = UI_POS_SCREEN;
+  ui.position.screen = (Vector){10.0f, 10.0f};
+  ui.z_index = 2;
+  Sprite *sprite = malloc(sizeof(Sprite));
+  *sprite = text_sprite("FPS: not initialized", game->fonts[0], (SDL_Color){255, 255, 255, 255});
+  ui.sprite = sprite;
+  return ui;
+}
+
+static UIElement coords_ui(Game *game) {
+  UIElement ui = {0};
+  ui.mode = UI_POS_SCREEN;
+  ui.position.screen = (Vector){10.0f, 30.0f};
+  ui.z_index = 2;
+  Sprite *sprite = malloc(sizeof(Sprite));
+  *sprite = text_sprite("World cords: not initialized", game->fonts[0], (SDL_Color){255, 255, 255, 255});
+  ui.sprite = sprite;
+  return ui;
 }
