@@ -134,7 +134,7 @@ static void map_render_tiles(Map *map) {
   }
 }
 
-static float triArea(Vector p1, Vector p2, Vector p3) {
+static double triArea(Vector p1, Vector p2, Vector p3) {
   return fabs((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / 2.0f;
 }
 
@@ -157,21 +157,21 @@ static MapCorners get_map_corners(Map *map, uint32_t margin) {
 }
 
 static bool pointInQuadrangle(Vector a, Vector b, Vector c, Vector d, Vector p) {
-  float s1 = triArea(a, b, p);
-  float s2 = triArea(b, c, p);
-  float s3 = triArea(c, d, p);
-  float s4 = triArea(d, a, p);
+  double s1 = triArea(a, b, p);
+  double s2 = triArea(b, c, p);
+  double s3 = triArea(c, d, p);
+  double s4 = triArea(d, a, p);
 
-  float S = triArea(a, b, c) + triArea(a, c, d);
+  double S = triArea(a, b, c) + triArea(a, c, d);
 
-  float sum = s1 + s2 + s3 + s4;
+  double sum = s1 + s2 + s3 + s4;
 
-  return fabs(sum - S) < 1e-3;
+  return fabs(sum - S) < 1.0;
 }
 
-bool is_point_within_map(Map *map, VectorU32 pos, uint32_t margin) {
+bool is_point_within_map(Map *map, Vector pos, uint32_t margin) {
   MapCorners mc = get_map_corners(map, margin);
-  return pointInQuadrangle(mc.t, mc.r, mc.b, mc.l, (Vector){(float)pos.x, (float)pos.y});
+  return pointInQuadrangle(mc.t, mc.r, mc.b, mc.l, (Vector){pos.x, pos.y});
 }
 
 VectorU32 map_gen_random_position(Map *map, uint32_t margin) {

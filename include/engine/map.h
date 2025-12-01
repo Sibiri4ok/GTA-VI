@@ -23,7 +23,7 @@ void map_free(Map *map);
 // Check that given point is within map boundaries, considering a margin.
 //
 // You can use that to ensure that objects are within the map area.
-bool is_point_within_map(Map *map, VectorU32 pos, uint32_t margin);
+bool is_point_within_map(Map *map, Vector pos, uint32_t margin);
 
 // Generate a random position within the map boundaries, considering a margin.
 VectorU32 map_gen_random_position(Map *map, uint32_t margin);
