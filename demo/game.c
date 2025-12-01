@@ -31,7 +31,7 @@ Game *game_create() {
 
   TilesInfo ti = {0};
   ti.tile_sprites = calloc(1, sizeof(Sprite));
-  ti.tile_sprites[0] = load_sprite("assets/grass_high.png", 1.0f / 7.2f);
+  ti.tile_sprites[0] = load_sprite("demo/assets/grass_high.png", 1.0f / 7.2f);
   ti.sprite_count = 1;
   ti.tiles = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint32_t));
   ti.sides_height = 64;
@@ -64,7 +64,7 @@ Game *game_create() {
     return NULL;
   }
   game->fonts = NULL;
-  arrpush(game->fonts, TTF_OpenFont("fonts/DejaVuSans.ttf", 20));
+  arrpush(game->fonts, TTF_OpenFont("demo/fonts/DejaVuSans.ttf", 20));
   if (!game->fonts[0]) {
     game_free(game);
     return NULL;
@@ -129,7 +129,7 @@ static UIElement hp_bar(Game *game) {
   bar.position.attached.offset = (Vector){0, 0};
   bar.z_index = 0;
   Sprite *sprite = malloc(sizeof(Sprite));
-  *sprite = load_sprite("assets/hp_bar.png", 1.0f);
+  *sprite = load_sprite("demo/assets/hp_bar.png", 1.0f);
   bar.sprite = sprite;
   return bar;
 }
