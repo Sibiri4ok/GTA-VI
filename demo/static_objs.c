@@ -14,13 +14,12 @@ typedef enum { OBJ_BUSH1 = 0, OBJ_BUSH2, OBJ_BUSH3, OBJ_TREE, OBJ_CACTUS, OBJ_PA
 static Sprite *load_st_sprites() {
   Sprite *obj_sprites = calloc(OBJ_COUNT, sizeof(Sprite));
 
-  obj_sprites[OBJ_BUSH1] = load_sprite("assets/bush1.png", 1.5f);
-  obj_sprites[OBJ_BUSH2] = load_sprite("assets/bush2.png", 1.5f);
-  obj_sprites[OBJ_BUSH3] = load_sprite("assets/bush3.png", 1.5f);
-  obj_sprites[OBJ_TREE] = load_sprite("assets/tree.png", 2.0f);
-  obj_sprites[OBJ_CACTUS] = load_sprite("assets/cactus1.png", 1.0f);
-  obj_sprites[OBJ_PALM] = load_sprite("assets/palm.png", 2.5f);
-
+  obj_sprites[OBJ_BUSH1] = load_sprite("demo/assets/bush1.png", 1.5f);
+  obj_sprites[OBJ_BUSH2] = load_sprite("demo/assets/bush2.png", 1.5f);
+  obj_sprites[OBJ_BUSH3] = load_sprite("demo/assets/bush3.png", 1.5f);
+  obj_sprites[OBJ_TREE] = load_sprite("demo/assets/tree.png", 2.0f);
+  obj_sprites[OBJ_CACTUS] = load_sprite("demo/assets/cactus1.png", 1.0f);
+  obj_sprites[OBJ_PALM] = load_sprite("demo/assets/palm.png", 2.5f);
   return obj_sprites;
 }
 

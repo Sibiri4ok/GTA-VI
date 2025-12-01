@@ -11,7 +11,7 @@
 REGISTER_TEST(coordinates_round_trip) {
   TilesInfo ti = {0};
   ti.tile_sprites = calloc(1, sizeof(Sprite));
-  ti.tile_sprites[0] = load_sprite("assets/grass_high.png", 1.0f / 7.2f);
+  ti.tile_sprites[0] = load_sprite("demo/assets/grass_high.png", 1.0f / 7.2f);
   ti.sprite_count = 1;
   ti.tiles = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint32_t));
   ti.sides_height = 64;

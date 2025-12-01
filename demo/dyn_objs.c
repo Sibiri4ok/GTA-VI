@@ -61,9 +61,9 @@ static EntitySprites create_man_sprites() {
 
   const int idle_count = 40;
   const int walk_count = 24;
-  Sprite *idle = load_spritesheet_frames("assets/man_idle.png", 28, 30, idle_count, scale);
+  Sprite *idle = load_spritesheet_frames("demo/assets/man_idle.png", 28, 30, idle_count, scale);
   if (!idle) { return sprs; }
-  Sprite *walk = load_spritesheet_frames("assets/man_walk.png", 28, 30, walk_count, scale);
+  Sprite *walk = load_spritesheet_frames("demo/assets/man_walk.png", 28, 30, walk_count, scale);
   if (!walk) {
     free_sprites(idle, idle_count);
     return sprs;
@@ -112,7 +112,7 @@ static EntitySprites create_sheep_sprites() {
   // Walk: 4 rows x 6 columns = 24 frames (rows: back, forward, left, right)
   // Idle: 4 rows x 4 columns = 16 frames (rows: back, forward, left, right)
 
-  sprs.all_frames = load_spritesheet_frames("assets/sheep_spritesheet.png", 32, 32, 48, scale);
+  sprs.all_frames = load_spritesheet_frames("demo/assets/sheep_spritesheet.png", 32, 32, 48, scale);
   if (!sprs.all_frames) { return sprs; }
   sprs.frame_count = 48;
 
