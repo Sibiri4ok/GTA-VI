@@ -149,6 +149,11 @@ static MapCorners get_map_corners(Map *map, uint32_t margin) {
   corners.b = tile_to_world(map, map->width, map->height);
   corners.l = tile_to_world(map, 0, map->height);
   corners.r = tile_to_world(map, map->width, 0);
+  corners.t.x += map->tile_width / 2;
+  corners.b.x += map->tile_width / 2;
+  corners.l.x += map->tile_width / 2;
+  corners.r.x += map->tile_width / 2;
+
   corners.t.y += margin;
   corners.b.y -= margin;
   corners.l.x += margin;
