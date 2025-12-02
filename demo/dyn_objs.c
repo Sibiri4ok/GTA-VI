@@ -36,6 +36,7 @@ typedef struct DynamicObjects {
   EntitySprites *sprites;
   GameObject *objects;
   GameObject *player;
+  Map *map;
 } DynamicObjects;
 
 // Object animation data
@@ -140,13 +141,13 @@ static EntitySprites create_sheep_sprites() {
   return sprs;
 }
 
-static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
+static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs) {
   GameObject *objects = NULL;
 
-  if (!dyn_objs || !map || !dyn_objs->sprites[TYPE_MAN].all_frames ||
+  if (!dyn_objs || !dyn_objs->map || !dyn_objs->sprites[TYPE_MAN].all_frames ||
       !dyn_objs->sprites[TYPE_SHEEP].all_frames)
     return NULL;
-  VectorU32 map_size = map_get_size(map);
+  VectorU32 map_size = map_get_size(dyn_objs->map);
 
   for (int i = 0; i < MAN_COUNT; i++) {
     GameObject man = {0};
@@ -179,7 +180,7 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
     GameObject sheep = {0};
 
     // Random positions around the map
-    VectorU32 pos = map_gen_random_position(map, 100);
+    VectorU32 pos = map_gen_random_position(dyn_objs->map, 100);
     sheep.position = (Vector){(float)pos.x, (float)pos.y};
 
     EntityData *data = calloc(1, sizeof(EntityData));
@@ -204,8 +205,10 @@ static GameObject *gen_dyn_objects(DynamicObjects *dyn_objs, Map *map) {
 }
 
 DynamicObjects *create_dynamic_objects(Map *map) {
+  if (!map) return NULL;
   DynamicObjects *dyn_objs = calloc(1, sizeof(DynamicObjects));
   if (!dyn_objs) return NULL;
+  dyn_objs->map = map;
 
   dyn_objs->sprites = calloc(TYPE_COUNT, sizeof(EntitySprites));
   if (!dyn_objs->sprites) {
@@ -216,7 +219,7 @@ DynamicObjects *create_dynamic_objects(Map *map) {
   dyn_objs->sprites[TYPE_MAN] = create_man_sprites();
   dyn_objs->sprites[TYPE_SHEEP] = create_sheep_sprites();
 
-  dyn_objs->objects = gen_dyn_objects(dyn_objs, map);
+  dyn_objs->objects = gen_dyn_objects(dyn_objs);
   dyn_objs->player = &dyn_objs->objects[0]; // first man
 
   return dyn_objs;
@@ -302,7 +305,7 @@ static void npc_run_away(GameObject *player, GameObject *npc) {
 }
 
 // Update animation and set sprite
-static void update_entity_animation(GameObject *obj) {
+static void update_object_animation(GameObject *obj) {
   if (!obj) return;
   EntityData *data = (EntityData *)obj->data;
   if (!data || !data->sprites) return;
@@ -319,6 +322,37 @@ static void update_entity_animation(GameObject *obj) {
   // Set current sprite
   int sprite_index = clip_start + data->frame_in_anim;
   obj->cur_sprite = &data->sprites->all_frames[sprite_index];
+}
+
+typedef struct Quadrangle {
+  Vector bl, br, tl, tr;
+} Quadrangle;
+
+static inline bool is_obj_base_within_map(Map *map, GameObject *obj) {
+  if (!map) return false;
+  float x_offset = obj->cur_sprite->width * 0.3f;
+  float y_offset = obj->cur_sprite->height * 0.1f;
+
+  Vector bl = (Vector){obj->position.x + x_offset, obj->position.y + obj->cur_sprite->height};
+  Vector br = (Vector){obj->position.x + obj->cur_sprite->width - x_offset,
+      obj->position.y + obj->cur_sprite->height};
+  Vector tl = (Vector){bl.x, bl.y - y_offset};
+  Vector tr = (Vector){br.x, br.y - y_offset};
+
+  return is_point_within_map(map, bl, 0) && is_point_within_map(map, br, 0) &&
+      is_point_within_map(map, tl, 0) && is_point_within_map(map, tr, 0);
+}
+
+// Update object position considering map boundaries
+static void safe_pos_update(Map *map, GameObject *obj) {
+  if (!obj) return;
+
+  Vector old_pos = obj->position;
+  obj->position.x += obj->pos_delta.x;
+  if (!is_obj_base_within_map(map, obj)) { obj->position.x = old_pos.x; }
+  obj->position.y += obj->pos_delta.y;
+  if (!is_obj_base_within_map(map, obj)) { obj->position.y = old_pos.y; }
+  return;
 }
 
 void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
@@ -358,9 +392,8 @@ void dyn_objs_update(DynamicObjects *dyn_objs, Input *input, float delta_time) {
     if (n_dir != data->direction) { data->frame_in_anim = 0; }
     data->state = n_st;
     data->direction = n_dir;
-    obj->position.x += dx;
-    obj->position.y += dy;
+    safe_pos_update(dyn_objs->map, obj);
 
-    update_entity_animation(obj);
+    update_object_animation(obj);
   }
 }

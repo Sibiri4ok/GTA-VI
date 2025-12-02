@@ -6,4 +6,4 @@ There is a 2 coordinate system:
 
 Their center and axes are arranged as in the image below
 
-![Tile and world coordinates](coordinates.svg)
+![Tile and world coordinates](coordinates.drawio.svg)
